@@ -15,11 +15,13 @@ const timerDisplayElement = document.getElementById('timer-display');
 
 // 🚨 修正箇所 1: 新しい要素の参照を追加
 const currentChallengeNameElement = document.getElementById('current-challenge-name');
-const debugStartButton = document.getElementById('debug-start-button'); // ★ 追加: デバッグボタンの参照
-// 🚨 追加: ピクトグラム表示関連の定数
-const poseGuideOverlay = document.getElementById('pose-guide-overlay'); // HTML上の要素 (今回はCanvasに描画するため、あまり使用しない)
-const GUIDE_LINE_COLOR = 'rgba(255, 255, 255, 0.8)'; // 白色半透明
-const GUIDE_DOT_COLOR = 'rgba(0, 0, 0, 0.8)'; // 黒色半透明
+const debugStartButton = document.getElementById('debug-start-button'); // ★ デバッグボタンの参照を再追加
+
+// 🚨 追加: ピクトグラム表示関連の定数 (以前のバージョンから継承)
+// このバージョンでは使用されていませんが、将来のために残しておきます。
+const poseGuideOverlay = document.getElementById('pose-guide-overlay'); 
+const GUIDE_LINE_COLOR = 'rgba(255, 255, 255, 0.8)'; 
+const GUIDE_DOT_COLOR = 'rgba(0, 0, 0, 0.8)'; 
 
 
 canvasElement.width = 640;
@@ -44,7 +46,7 @@ let challengeTimerId = null;
 // =========================================================================
 
 /**
- * 3つのランドマークから角度を計算 (変更なし)
+ * 3つのランドマークから角度を計算
  */
 function calculateAngle(A, M, B) {
     const vectorMA_x = A.x - M.x;
@@ -67,7 +69,7 @@ function calculateAngle(A, M, B) {
 }
 
 /**
- * 起動トリガー用のポーズが取られているか判定する (両腕垂直上げ) (変更なし)
+ * 起動トリガー用のポーズが取られているか判定する (両腕垂直上げ)
  */
 function isStartPoseAchieved(landmarks) {
     const L = LANDMARK_INDICES;
@@ -102,7 +104,7 @@ function isStartPoseAchieved(landmarks) {
 }
 
 /**
- * マッチングロジック (最終スコア計算) - 全身対応に更新 (変更なし)
+ * マッチングロジック (最終スコア計算) - 全身対応に更新
  */
 function calculateMatchScore(currentLandmarks) {
     const challenge = CHALLENGES[currentChallengeIndex];
@@ -193,7 +195,7 @@ function calculateMatchScore(currentLandmarks) {
 }
 
 // =========================================================================
-// 📐 ポーズガイド用データと描画関数 🚨 追加
+// 📐 ポーズガイド用データと描画関数 
 // =========================================================================
 
 /**
@@ -284,7 +286,7 @@ function getTargetPoseLandmarks() {
 }
 
 // =========================================================================
-// ⏱️ チャレンジ管理ロジック (変更なし)
+// ⏱️ チャレンジ管理ロジック
 // =========================================================================
 
 /**
@@ -311,7 +313,7 @@ function resetChallenge(nextStage = false) {
         if (currentChallengeNameElement) {
             currentChallengeNameElement.textContent = `▶️ ${nextChallenge.name}`;
         }
-        // ★ 追加: デバッグボタンを再有効化
+        // ★ デバッグボタンを再有効化
         if (debugStartButton) {
             debugStartButton.disabled = false;
             debugStartButton.style.backgroundColor = '#007bff';
@@ -322,7 +324,7 @@ function resetChallenge(nextStage = false) {
         if (currentChallengeNameElement) {
             currentChallengeNameElement.textContent = '全チャレンジ完了！';
         }
-        // ★ 追加: デバッグボタンを無効化
+        // ★ デバッグボタンを無効化
         if (debugStartButton) {
             debugStartButton.disabled = true;
             debugStartButton.style.backgroundColor = '#6c757d';
@@ -366,7 +368,7 @@ function startPreparationPhase() {
     if (isChallengeStarted || isInPreparationPhase) return;
     isInPreparationPhase = true;
 
-    // ★ 追加: デバッグボタンを無効化
+    // ★ デバッグボタンを無効化
     if (debugStartButton) {
         debugStartButton.disabled = true;
         debugStartButton.style.backgroundColor = '#6c757d';
@@ -381,9 +383,8 @@ function startPreparationPhase() {
     }, PREP_DELAY_SECONDS * 1000);
 }
 
-
 /**
- * カウントダウンタイマーを開始する (変更なし)
+ * カウントダウンタイマーを開始する 
  */
 function startChallengeTimer() {
     if (isChallengeStarted) return;
@@ -407,7 +408,7 @@ function startChallengeTimer() {
             guideMessageElement.textContent = `ポーズを維持してください！測定中... ${holdTime + 1} / ${HOLD_SECONDS} 秒`;
         } else {
             clearInterval(challengeTimerId);
-            challengeTimerId = null; // ★ 追加: タイマーIDをクリア
+            challengeTimerId = null; 
             isPoseFixed = true;
             timerDisplayElement.classList.remove('show-timer');
             guideMessageElement.textContent = 'ポーズ確定！最終スコアを計算中です。';
@@ -433,13 +434,19 @@ pose.onResults(onResults);
 
 const { Camera } = window;
 const camera = new Camera(videoElement, {
+    // ★ 修正後の onFrame ロジック
     onFrame: async () => {
-        // ポーズ固定が解除された直後 (finalPoseLandmarksがnull) も検出を継続する
-        if (!isPoseFixed || (isPoseFixed && !finalPoseLandmarks)) {
-             await pose.send({ image: videoElement });
-        } else if (isPoseFixed && finalPoseLandmarks) {
-            // ポーズが確定し、ランドマークも確定している場合は再描画のみ
+        // finalPoseLandmarksがセットされたら、MediaPipeへの送信を停止し、再描画のみを行う
+        if (finalPoseLandmarks) {
             onResults({ image: videoElement, poseLandmarks: finalPoseLandmarks });
+        } 
+        // ポーズ固定中 (isPoseFixed=true) でも、finalPoseLandmarksがまだ設定されていない最初の1回は pose.send を実行させる
+        else if (isPoseFixed) {
+            await pose.send({ image: videoElement });
+        }
+        // チャレンジ開始前または計測中は通常通り pose.send を実行
+        else {
+            await pose.send({ image: videoElement });
         }
     },
     width: 640,
@@ -490,11 +497,9 @@ function onResults(results) {
     if (currentChallengeIndex < CHALLENGES.length && isChallengeStarted && !isPoseFixed) {
         const targetLandmarks = getTargetPoseLandmarks();
         if (targetLandmarks) {
-            // drawConnectors/drawLandmarksは正規化座標 (0.0〜1.0) を期待するため、そのまま渡す
-            // ピクトグラム（白い線）を描画
+            // ユーザーのポーズではなく目標ポーズを描画
             drawConnectors(canvasCtx, targetLandmarks, window.POSE_CONNECTIONS,
                            { color: GUIDE_LINE_COLOR, lineWidth: 8 }); 
-            // 関節の縁（黒い点）を描画
             drawLandmarks(canvasCtx, targetLandmarks,
                           { color: GUIDE_DOT_COLOR, lineWidth: 4, radius: 8 });
         }
