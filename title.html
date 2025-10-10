@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>ポーズチャレンジ | タイトル</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* title.html 専用のスタイル */
+        #title-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+            background-color: #f4f7f6;
+        }
+        #title-text {
+            font-size: 3.5em;
+            color: #007bff;
+            margin-bottom: 30px;
+            font-weight: bold;
+        }
+        #start-button {
+            padding: 15px 40px;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: white;
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        #start-button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div id="title-container">
+        <h1 id="title-text">ポーズチャレンジ 🏋️‍♂️</h1>
+        <p style="font-size: 1.2em; color: #666; margin-bottom: 40px;">〜 正確なポーズで高得点を目指せ！ 〜</p>
+        <button id="start-button" onclick="window.location.href='index.html';">
+            チャレンジ開始
+        </button>
+    </div>
+</body>
+</html>
