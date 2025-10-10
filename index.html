@@ -8,7 +8,6 @@
 </head>
 
 <body>
-    <!-- <h1 id="main-worninag">ここはmainブランチだよ</h1> -->
     <div id="main-layout">
         <div id="video-container">
             <video id="video" playsinline></video>
@@ -23,12 +22,15 @@
             <div id="guide-message">
                 **全チャレンジ完了！**...
             </div>
+            <button id="debug-start-button" style="margin-top: 20px; padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                ▶️ チャレンジ強制スタート (DEBUG)
+            </button>
         </div>
     </div>
 
-    <script src="./lib/camera_utils.js"></script>
-    <script src="./lib/drawing_utils.js"></script>
-    <script src="./lib/pose.js"></script>
+     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
 
     <script type="module" src="./script.js"></script>
 </body>
