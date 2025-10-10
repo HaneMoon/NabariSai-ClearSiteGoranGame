@@ -15,6 +15,11 @@ const timerDisplayElement = document.getElementById('timer-display');
 
 // 🚨 修正箇所 1: 新しい要素の参照を追加
 const currentChallengeNameElement = document.getElementById('current-challenge-name');
+// 🚨 追加: ピクトグラム表示関連の定数
+const poseGuideOverlay = document.getElementById('pose-guide-overlay'); // HTML上の要素 (今回はCanvasに描画するため、あまり使用しない)
+const GUIDE_LINE_COLOR = 'rgba(255, 255, 255, 0.8)'; // 白色半透明
+const GUIDE_DOT_COLOR = 'rgba(0, 0, 0, 0.8)'; // 黒色半透明
+
 
 canvasElement.width = 640;
 canvasElement.height = 480;
@@ -96,7 +101,7 @@ function isStartPoseAchieved(landmarks) {
 }
 
 /**
- * マッチングロジック (最終スコア計算) - 全身対応に更新
+ * マッチングロジック (最終スコア計算) - 全身対応に更新 (変更なし)
  */
 function calculateMatchScore(currentLandmarks) {
     const challenge = CHALLENGES[currentChallengeIndex];
@@ -186,9 +191,99 @@ function calculateMatchScore(currentLandmarks) {
     return Math.min(100, totalScore / jointCount); 
 }
 
+// =========================================================================
+// 📐 ポーズガイド用データと描画関数 🚨 追加
+// =========================================================================
+
+/**
+ * 目標ポーズのランドマーク座標を定義 (Canvasの正規化座標: 0.0〜1.0)
+ * 座標は、画面下部中央付近に人が立っている状態を想定
+ */
+const TARGET_POSE_LANDMARKS = [
+    // 0: 鼻, 1: 右目内側, ..., 10: 左口角 (顔は省略)
+    null, null, null, null, null, null, null, null, null, null, null,
+    // 11: 左肩 (L_SHOULDER)
+    { x: 0.35, y: 0.45, z: 0, visibility: 0.9 },
+    // 12: 右肩 (R_SHOULDER)
+    { x: 0.65, y: 0.45, z: 0, visibility: 0.9 },
+    // 13: 左肘 (L_ELBOW)
+    { x: 0.3, y: 0.6, z: 0, visibility: 0.9 },
+    // 14: 右肘 (R_ELBOW)
+    { x: 0.7, y: 0.6, z: 0, visibility: 0.9 },
+    // 15: 左手首 (L_WRIST)
+    { x: 0.25, y: 0.75, z: 0, visibility: 0.9 },
+    // 16: 右手首 (R_WRIST)
+    { x: 0.75, y: 0.75, z: 0, visibility: 0.9 },
+    // 17-22: 省略
+    null, null, null, null, null, null,
+    // 23: 左腰 (L_HIP)
+    { x: 0.4, y: 0.65, z: 0, visibility: 0.9 },
+    // 24: 右腰 (R_HIP)
+    { x: 0.6, y: 0.65, z: 0, visibility: 0.9 },
+    // 25: 左膝 (L_KNEE)
+    { x: 0.4, y: 0.8, z: 0, visibility: 0.9 },
+    // 26: 右膝 (R_KNEE)
+    { x: 0.6, y: 0.8, z: 0, visibility: 0.9 },
+    // 27: 左足首 (L_ANKLE)
+    { x: 0.4, y: 0.95, z: 0, visibility: 0.9 },
+    // 28: 右足首 (R_ANKLE)
+    { x: 0.6, y: 0.95, z: 0, visibility: 0.9 },
+];
+
+/**
+ * 現在のチャレンジに基づき、目標ポーズのランドマークを生成する
+ */
+function getTargetPoseLandmarks() {
+    if (currentChallengeIndex >= CHALLENGES.length) return null;
+    
+    const challenge = CHALLENGES[currentChallengeIndex];
+    // 基本のポーズをコピー
+    const targetPose = JSON.parse(JSON.stringify(TARGET_POSE_LANDMARKS));
+    const L = LANDMARK_INDICES;
+
+    // チャレンジごとのポーズを上書き
+    if (challenge.name === "左手を上げる") {
+        // 左手を上空に
+        targetPose[L.LEFT_ELBOW].y = 0.3;
+        targetPose[L.LEFT_WRIST].y = 0.15;
+        targetPose[L.LEFT_ELBOW].x = targetPose[L.LEFT_SHOULDER].x;
+        targetPose[L.LEFT_WRIST].x = targetPose[L.LEFT_SHOULDER].x;
+        // 右腕は自然に下げる
+        targetPose[L.RIGHT_ELBOW].y = 0.6;
+        targetPose[L.RIGHT_WRIST].y = 0.75;
+    } else if (challenge.name === "右手を上げる") {
+        // 右手を上空に
+        targetPose[L.RIGHT_ELBOW].y = 0.3;
+        targetPose[L.RIGHT_WRIST].y = 0.15;
+        targetPose[L.RIGHT_ELBOW].x = targetPose[L.RIGHT_SHOULDER].x;
+        targetPose[L.RIGHT_WRIST].x = targetPose[L.RIGHT_SHOULDER].x;
+        // 左腕は自然に下げる
+        targetPose[L.LEFT_ELBOW].y = 0.6;
+        targetPose[L.LEFT_WRIST].y = 0.75;
+    } else if (challenge.name === "片足立ち (右足軸)") {
+        // 右足軸
+        // 左足は持ち上げる (膝を曲げる)
+        targetPose[L.LEFT_KNEE].y = 0.6;
+        targetPose[L.LEFT_ANKLE].y = 0.4;
+        targetPose[L.LEFT_ANKLE].x = 0.3; // 少し内側に曲げる
+        // 両手を上空に
+        targetPose[L.LEFT_ELBOW].y = 0.3;
+        targetPose[L.LEFT_WRIST].y = 0.15;
+        targetPose[L.LEFT_ELBOW].x = targetPose[L.LEFT_SHOULDER].x;
+        targetPose[L.LEFT_WRIST].x = targetPose[L.LEFT_SHOULDER].x;
+        targetPose[L.RIGHT_ELBOW].y = 0.3;
+        targetPose[L.RIGHT_WRIST].y = 0.15;
+        targetPose[L.RIGHT_ELBOW].x = targetPose[L.RIGHT_SHOULDER].x;
+        targetPose[L.RIGHT_WRIST].x = targetPose[L.RIGHT_SHOULDER].x;
+    }
+    
+    // 定義されたランドマークのみをフィルタリングして返す (MediaPipeのユーティリティ関数に渡すため、nullも含む元の配列を返す)
+    // ただし、描画に必要なランドマークのみを含めたいので、フィルタリングはここでは行わない。
+    return targetPose;
+}
 
 // =========================================================================
-// ⏱️ チャレンジ管理ロジック
+// ⏱️ チャレンジ管理ロジック (変更なし)
 // =========================================================================
 
 /**
@@ -308,7 +403,8 @@ function startChallengeTimer() {
 // -------------------------------------------------------------------------
 const pose = new Pose({
     locateFile: (file) => {
-        return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
+        return `./lib/${file}`
+        // return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
     }
 });
 pose.setOptions({
@@ -354,6 +450,22 @@ function onResults(results) {
     canvasCtx.globalCompositeOperation = 'source_over';
     canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
 
+    // 🚨 ランドマーク描画前にピクトグラムを描画
+    // チャレンジ開始後、ポーズが固定される前のみガイドを表示
+    if (currentChallengeIndex < CHALLENGES.length && isChallengeStarted && !isPoseFixed) {
+        const targetLandmarks = getTargetPoseLandmarks();
+        if (targetLandmarks) {
+            // drawConnectors/drawLandmarksは正規化座標 (0.0～1.0) を期待するため、そのまま渡す
+            // ピクトグラム（白い線）を描画
+            drawConnectors(canvasCtx, targetLandmarks, window.POSE_CONNECTIONS,
+                           { color: GUIDE_LINE_COLOR, lineWidth: 8 }); 
+            // 関節の縁（黒い点）を描画
+            drawLandmarks(canvasCtx, targetLandmarks,
+                          { color: GUIDE_DOT_COLOR, lineWidth: 4, radius: 8 });
+        }
+    }
+
+
     if (results.poseLandmarks) {
         
         // 1. チャレンジ開始チェック
@@ -393,6 +505,7 @@ function onResults(results) {
         const lineColor = isPoseFixed ? '#FFD700' : '#00FF00'; 
         const dotColor = isPoseFixed ? '#FFA500' : '#FF0000'; 
         
+        // ユーザーのポーズを描画
         drawConnectors(canvasCtx, drawingLandmarks, window.POSE_CONNECTIONS,
                        { color: lineColor, lineWidth: 4 }); 
         drawLandmarks(canvasCtx, drawingLandmarks,

@@ -63,6 +63,10 @@ h1 {
     transform: scaleX(-1); 
 }
 
+/* 🚨 追加: ピクトグラムオーバーレイ用のスタイルは、今回はCanvas描画で実現するためコメントアウトまたは削除 */
+/* #pose-guide-overlay { ... } */
+
+
 /* 修正点: 結果ボックスをサイドパネルとして固定幅にする */
 #result-box {
     text-align: center;

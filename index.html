@@ -13,19 +13,22 @@
         <div id="video-container">
             <video id="video" playsinline></video>
             <canvas id="canvas"></canvas>
+            <div id="pose-guide-overlay"></div>
         </div>
         <div id="result-box">
+            <p><span id="current-challenge-name">---</span></p>
             <p>現在のマッチング度:</p>
             <span id="match-score">14.5 % (平均)</span>
+            <div id="timer-display">GO!</div>
             <div id="guide-message">
                 **全チャレンジ完了！**...
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
+    <script src="./lib/camera_utils.js"></script>
+    <script src="./lib/drawing_utils.js"></script>
+    <script src="./lib/pose.js"></script>
 
     <script type="module" src="./script.js"></script>
 </body>
