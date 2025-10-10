@@ -76,6 +76,10 @@ h1 {
     justify-content: flex-start; 
 }
 
+#main-worninag{
+color:red;
+font-size: 100px;
+}
 #match-score {
     font-size: 3em;
     font-weight: bold;
