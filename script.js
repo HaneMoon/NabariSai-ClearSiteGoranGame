@@ -211,13 +211,13 @@ function resetChallenge(nextStage = false) {
         guideMessageElement.textContent = `カメラ起動完了！チャレンジ開始のため、両手を垂直に上げてポーズを維持してください。`;
         timerDisplayElement.classList.remove('show-timer');
         
-        // チャレンジ名を表示
+        // 🚨 修正箇所 2: チャレンジ名を表示
         if (currentChallengeNameElement) {
             currentChallengeNameElement.textContent = `▶️ ${nextChallenge.name}`;
         }
     } else {
         showFinalResults();
-        //最終結果表示時、チャレンジ名をクリア
+        // 🚨 修正箇所 3: 最終結果表示時、チャレンジ名をクリア
         if (currentChallengeNameElement) {
             currentChallengeNameElement.textContent = '全チャレンジ完了！';
         }
@@ -254,7 +254,7 @@ function showFinalResults() {
 }
 
 /**
- * 準備フェーズを開始する
+ * 準備フェーズを開始する (変更なし)
  */
 function startPreparationPhase() {
     if (isChallengeStarted || isInPreparationPhase) return;
@@ -334,8 +334,8 @@ const camera = new Camera(videoElement, {
 
 // カメラ起動処理
 camera.start().then(() => {
-    guideMessageElement.textContent = `カメラ起動完了！チャレンジ開始のため、両手をゆっくり垂直に上げてポーズを維持してください。`;
-    //カメラ起動時に最初のチャレンジ名を表示
+    guideMessageElement.textContent = `カメラ起動完了！チャレンジ開始のため、両手を垂直に上げてポーズを維持してください。`;
+    // 🚨 修正箇所 4: カメラ起動時に最初のチャレンジ名を表示
     if (currentChallengeIndex < CHALLENGES.length && currentChallengeNameElement) {
         currentChallengeNameElement.textContent = `▶️ ${CHALLENGES[currentChallengeIndex].name}`;
     }
