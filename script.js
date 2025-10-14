@@ -13,14 +13,6 @@ const matchScoreElement = document.getElementById('match-score');
 const guideMessageElement = document.getElementById('guide-message');
 const timerDisplayElement = document.getElementById('timer-display');
 const currentChallengeNameElement = document.getElementById('current-challenge-name');
-const debugStartButton = document.getElementById('debug-start-button'); // ★ デバッグボタンの参照を再追加
-
-// 🚨 追加: ピクトグラム表示関連の定数 (以前のバージョンから継承)
-// このバージョンでは使用されていませんが、将来のために残しておきます。
-const poseGuideOverlay = document.getElementById('pose-guide-overlay'); 
-const GUIDE_LINE_COLOR = 'rgba(255, 255, 255, 0.8)'; 
-const GUIDE_DOT_COLOR = 'rgba(0, 0, 0, 0.8)'; 
-
 
 // デバッグボタンの要素を取得
 const debugStartButton = document.getElementById('debug-start-button');
@@ -47,7 +39,7 @@ let challengeTimerId = null;
 // =========================================================================
 
 /**
- * 3つのランドマークから角度を計算
+ * 3つのランドマークから角度を計算 (変更なし)
  */
 function calculateAngle(A, M, B) {
     const vectorMA_x = A.x - M.x;
@@ -70,7 +62,7 @@ function calculateAngle(A, M, B) {
 }
 
 /**
- * 起動トリガー用のポーズが取られているか判定する (両腕垂直上げ)
+ * 起動トリガー用のポーズが取られているか判定する (両腕垂直上げ) (変更なし)
  */
 function isStartPoseAchieved(landmarks) {
     const L = LANDMARK_INDICES;
@@ -195,96 +187,6 @@ function calculateMatchScore(currentLandmarks) {
     return Math.min(100, totalScore / jointCount); 
 }
 
-// =========================================================================
-// 📐 ポーズガイド用データと描画関数 
-// =========================================================================
-
-/**
- * 目標ポーズのランドマーク座標を定義 (Canvasの正規化座標: 0.0〜1.0)
- * 座標は、画面下部中央付近に人が立っている状態を想定
- */
-const TARGET_POSE_LANDMARKS = [
-    // 0: 鼻, 1: 右目内側, ..., 10: 左口角 (顔は省略)
-    null, null, null, null, null, null, null, null, null, null, null,
-    // 11: 左肩 (L_SHOULDER)
-    { x: 0.35, y: 0.45, z: 0, visibility: 0.9 },
-    // 12: 右肩 (R_SHOULDER)
-    { x: 0.65, y: 0.45, z: 0, visibility: 0.9 },
-    // 13: 左肘 (L_ELBOW)
-    { x: 0.3, y: 0.6, z: 0, visibility: 0.9 },
-    // 14: 右肘 (R_ELBOW)
-    { x: 0.7, y: 0.6, z: 0, visibility: 0.9 },
-    // 15: 左手首 (L_WRIST)
-    { x: 0.25, y: 0.75, z: 0, visibility: 0.9 },
-    // 16: 右手首 (R_WRIST)
-    { x: 0.75, y: 0.75, z: 0, visibility: 0.9 },
-    // 17-22: 省略
-    null, null, null, null, null, null,
-    // 23: 左腰 (L_HIP)
-    { x: 0.4, y: 0.65, z: 0, visibility: 0.9 },
-    // 24: 右腰 (R_HIP)
-    { x: 0.6, y: 0.65, z: 0, visibility: 0.9 },
-    // 25: 左膝 (L_KNEE)
-    { x: 0.4, y: 0.8, z: 0, visibility: 0.9 },
-    // 26: 右膝 (R_KNEE)
-    { x: 0.6, y: 0.8, z: 0, visibility: 0.9 },
-    // 27: 左足首 (L_ANKLE)
-    { x: 0.4, y: 0.95, z: 0, visibility: 0.9 },
-    // 28: 右足首 (R_ANKLE)
-    { x: 0.6, y: 0.95, z: 0, visibility: 0.9 },
-];
-
-/**
- * 現在のチャレンジに基づき、目標ポーズのランドマークを生成する
- */
-function getTargetPoseLandmarks() {
-    if (currentChallengeIndex >= CHALLENGES.length) return null;
-    
-    const challenge = CHALLENGES[currentChallengeIndex];
-    // 基本のポーズをコピー
-    const targetPose = JSON.parse(JSON.stringify(TARGET_POSE_LANDMARKS));
-    const L = LANDMARK_INDICES;
-
-    // チャレンジごとのポーズを上書き
-    if (challenge.name === "左手を上げる") {
-        // 左手を上空に
-        targetPose[L.LEFT_ELBOW].y = 0.3;
-        targetPose[L.LEFT_WRIST].y = 0.15;
-        targetPose[L.LEFT_ELBOW].x = targetPose[L.LEFT_SHOULDER].x;
-        targetPose[L.LEFT_WRIST].x = targetPose[L.LEFT_SHOULDER].x;
-        // 右腕は自然に下げる
-        targetPose[L.RIGHT_ELBOW].y = 0.6;
-        targetPose[L.RIGHT_WRIST].y = 0.75;
-    } else if (challenge.name === "右手を上げる") {
-        // 右手を上空に
-        targetPose[L.RIGHT_ELBOW].y = 0.3;
-        targetPose[L.RIGHT_WRIST].y = 0.15;
-        targetPose[L.RIGHT_ELBOW].x = targetPose[L.RIGHT_SHOULDER].x;
-        targetPose[L.RIGHT_WRIST].x = targetPose[L.RIGHT_SHOULDER].x;
-        // 左腕は自然に下げる
-        targetPose[L.LEFT_ELBOW].y = 0.6;
-        targetPose[L.LEFT_WRIST].y = 0.75;
-    } else if (challenge.name === "片足立ち (右足軸)") {
-        // 右足軸
-        // 左足は持ち上げる (膝を曲げる)
-        targetPose[L.LEFT_KNEE].y = 0.6;
-        targetPose[L.LEFT_ANKLE].y = 0.4;
-        targetPose[L.LEFT_ANKLE].x = 0.3; // 少し内側に曲げる
-        // 両手を上空に
-        targetPose[L.LEFT_ELBOW].y = 0.3;
-        targetPose[L.LEFT_WRIST].y = 0.15;
-        targetPose[L.LEFT_ELBOW].x = targetPose[L.LEFT_SHOULDER].x;
-        targetPose[L.LEFT_WRIST].x = targetPose[L.LEFT_SHOULDER].x;
-        targetPose[L.RIGHT_ELBOW].y = 0.3;
-        targetPose[L.RIGHT_WRIST].y = 0.15;
-        targetPose[L.RIGHT_ELBOW].x = targetPose[L.RIGHT_SHOULDER].x;
-        targetPose[L.RIGHT_WRIST].x = targetPose[L.RIGHT_SHOULDER].x;
-    }
-    
-    // 定義されたランドマークのみをフィルタリングして返す (MediaPipeのユーティリティ関数に渡すため、nullも含む元の配列を返す)
-    // ただし、描画に必要なランドマークのみを含めたいので、フィルタリングはここでは行わない。
-    return targetPose;
-}
 
 // =========================================================================
 // ⏱️ チャレンジ管理ロジック
@@ -316,21 +218,11 @@ function resetChallenge(nextStage = false) {
         if (currentChallengeNameElement) {
             currentChallengeNameElement.textContent = `▶️ ${nextChallenge.name}`;
         }
-        // ★ デバッグボタンを再有効化
-        if (debugStartButton) {
-            debugStartButton.disabled = false;
-            debugStartButton.style.backgroundColor = '#007bff';
-        }
     } else {
         showFinalResults();
         // 最終結果表示時、チャレンジ名をクリア
         if (currentChallengeNameElement) {
             currentChallengeNameElement.textContent = '全チャレンジ完了！';
-        }
-        // ★ デバッグボタンを無効化
-        if (debugStartButton) {
-            debugStartButton.disabled = true;
-            debugStartButton.style.backgroundColor = '#6c757d';
         }
     }
 }
@@ -371,12 +263,6 @@ function startPreparationPhase() {
     if (isChallengeStarted || isInPreparationPhase) return;
     isInPreparationPhase = true;
 
-    // ★ デバッグボタンを無効化
-    if (debugStartButton) {
-        debugStartButton.disabled = true;
-        debugStartButton.style.backgroundColor = '#6c757d';
-    }
-
     const currentChallenge = CHALLENGES[currentChallengeIndex];
     guideMessageElement.textContent = `✅ ${currentChallenge.message} ポーズを確認！そのままでお待ちください...`;
     
@@ -386,8 +272,6 @@ function startPreparationPhase() {
     }, PREP_DELAY_SECONDS * 1000);
 }
 
-<<<<<<< HEAD
-=======
 // チャレンジ強制開始関数
 function forceStartChallenge() {
     // 既にチャレンジ中ではないか、最終結果表示中でないかを確認
@@ -410,7 +294,6 @@ function forceStartChallenge() {
 }
 
 
->>>>>>> 60e7f9d303878d9d1cb22378c0220da0fc1a5c2f
 /**
  * カウントダウンタイマーを開始する 
  */
@@ -446,12 +329,6 @@ function startChallengeTimer() {
             guideMessageElement.textContent = `ポーズを維持してください！測定中... ${holdTime + 1} / ${HOLD_SECONDS} 秒`;
         } else {
             clearInterval(challengeTimerId);
-<<<<<<< HEAD
-            challengeTimerId = null; 
-            isPoseFixed = true;
-            timerDisplayElement.classList.remove('show-timer');
-            guideMessageElement.textContent = 'ポーズ確定！最終スコアを計算中です。';
-=======
             
             // ★ 修正箇所: ポーズが固定されなかった場合 (finalPoseLandmarksがnull) の強制終了処理を追加
             if (!finalPoseLandmarks) {
@@ -475,7 +352,6 @@ function startChallengeTimer() {
                 timerDisplayElement.classList.remove('show-timer');
                 guideMessageElement.textContent = 'ポーズ確定！最終スコアを計算中です。';
             }
->>>>>>> 60e7f9d303878d9d1cb22378c0220da0fc1a5c2f
         }
     }, 1000);
 }
@@ -486,7 +362,6 @@ function startChallengeTimer() {
 // -------------------------------------------------------------------------
 const pose = new Pose({
     locateFile: (file) => {
-        // return `./lib/${file}`
         return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
     }
 });
@@ -498,19 +373,13 @@ pose.onResults(onResults);
 
 const { Camera } = window;
 const camera = new Camera(videoElement, {
-    // ★ 修正後の onFrame ロジック
     onFrame: async () => {
-        // finalPoseLandmarksがセットされたら、MediaPipeへの送信を停止し、再描画のみを行う
-        if (finalPoseLandmarks) {
+        // ポーズ固定が解除された直後 (finalPoseLandmarksがnull) も検出を継続する
+        if (!isPoseFixed || (isPoseFixed && !finalPoseLandmarks)) {
+             await pose.send({ image: videoElement });
+        } else if (isPoseFixed && finalPoseLandmarks) {
+            // ポーズが確定し、ランドマークも確定している場合は再描画のみ
             onResults({ image: videoElement, poseLandmarks: finalPoseLandmarks });
-        } 
-        // ポーズ固定中 (isPoseFixed=true) でも、finalPoseLandmarksがまだ設定されていない最初の1回は pose.send を実行させる
-        else if (isPoseFixed) {
-            await pose.send({ image: videoElement });
-        }
-        // チャレンジ開始前または計測中は通常通り pose.send を実行
-        else {
-            await pose.send({ image: videoElement });
         }
     },
     width: 640,
@@ -536,23 +405,6 @@ camera.start().then(() => {
 });
 
 
-// 🚨 デバッグ用ボタンにイベントリスナーを追加
-if (debugStartButton) {
-    debugStartButton.addEventListener('click', () => {
-        if (currentChallengeIndex < CHALLENGES.length && !isChallengeStarted && !isInPreparationPhase) {
-            console.log("DEBUG: チャレンジを強制スタートします。");
-            // isStartPoseAchieved() のチェックをスキップして、直接準備フェーズを開始
-            startPreparationPhase();
-        } else if (currentChallengeIndex >= CHALLENGES.length) {
-            console.log("DEBUG: 全チャレンジ完了済みです。");
-            guideMessageElement.textContent = "全チャレンジが完了しています。ページをリロードしてください。";
-        } else {
-             console.log("DEBUG: チャレンジはすでに進行中または準備中です。");
-        }
-    });
-}
-
-
 /**
  * MediaPipeからの姿勢検出結果を受け取るコールバック
  */
@@ -561,20 +413,6 @@ function onResults(results) {
     canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
     canvasCtx.globalCompositeOperation = 'source_over';
     canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
-
-    // 🚨 ランドマーク描画前にピクトグラムを描画
-    // チャレンジ開始後、ポーズが固定される前のみガイドを表示
-    if (currentChallengeIndex < CHALLENGES.length && isChallengeStarted && !isPoseFixed) {
-        const targetLandmarks = getTargetPoseLandmarks();
-        if (targetLandmarks) {
-            // ユーザーのポーズではなく目標ポーズを描画
-            drawConnectors(canvasCtx, targetLandmarks, window.POSE_CONNECTIONS,
-                           { color: GUIDE_LINE_COLOR, lineWidth: 8 }); 
-            drawLandmarks(canvasCtx, targetLandmarks,
-                          { color: GUIDE_DOT_COLOR, lineWidth: 4, radius: 8 });
-        }
-    }
-
 
     if (results.poseLandmarks) {
         
@@ -585,16 +423,8 @@ function onResults(results) {
 
         // 2. ポーズ固定の瞬間、データを保存 (確定処理)
         if (isPoseFixed && !finalPoseLandmarks) {
-            
-            // ★ 修正点1: 確定処理に入ったら、まずポーズデータを固定する
             finalPoseLandmarks = JSON.parse(JSON.stringify(results.poseLandmarks));
-
-            // ★ 修正点2: タイマーが残っていればここで確実に停止する
-            if (challengeTimerId) {
-                clearInterval(challengeTimerId);
-                challengeTimerId = null;
-            }
-
+            
             const score = calculateMatchScore(finalPoseLandmarks);
             CHALLENGES[currentChallengeIndex].score = score;
             
@@ -621,12 +451,7 @@ function onResults(results) {
                 resetChallenge(true);
             }, 1000); 
             
-<<<<<<< HEAD
-            // ★ 修正点3: 確定処理が完了したら、これ以上 onResults 内のスコアリングを続行しない
-            return; 
-=======
             // ★ 修正箇所: onResultsの外でisPoseFixedを操作しない
->>>>>>> 60e7f9d303878d9d1cb22378c0220da0fc1a5c2f
         }
 
         // 3. 描画とスコア表示の更新
@@ -635,7 +460,6 @@ function onResults(results) {
         const lineColor = isPoseFixed ? '#FFD700' : '#00FF00'; 
         const dotColor = isPoseFixed ? '#FFA500' : '#FF0000'; 
         
-        // ユーザーのポーズを描画
         drawConnectors(canvasCtx, drawingLandmarks, window.POSE_CONNECTIONS,
                        { color: lineColor, lineWidth: 4 }); 
         drawLandmarks(canvasCtx, drawingLandmarks,
