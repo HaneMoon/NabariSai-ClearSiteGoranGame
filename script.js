@@ -12,9 +12,10 @@ const canvasCtx = canvasElement.getContext('2d');
 const matchScoreElement = document.getElementById('match-score');
 const guideMessageElement = document.getElementById('guide-message');
 const timerDisplayElement = document.getElementById('timer-display');
-
-// 🚨 修正箇所 1: 新しい要素の参照を追加
 const currentChallengeNameElement = document.getElementById('current-challenge-name');
+
+// デバッグボタンの要素を取得
+const debugStartButton = document.getElementById('debug-start-button');
 
 canvasElement.width = 640;
 canvasElement.height = 480;
@@ -96,7 +97,7 @@ function isStartPoseAchieved(landmarks) {
 }
 
 /**
- * マッチングロジック (最終スコア計算) - 全身対応に更新
+ * マッチングロジック (最終スコア計算) - 全身対応に更新 (変更なし)
  */
 function calculateMatchScore(currentLandmarks) {
     const challenge = CHALLENGES[currentChallengeIndex];
@@ -195,7 +196,8 @@ function calculateMatchScore(currentLandmarks) {
  * チャレンジをリセットし、次のステージへ進む
  */
 function resetChallenge(nextStage = false) {
-    isPoseFixed = false;
+    // isPoseFixedはonResults内で解除されるべきだが、念の為ここでも確認
+    isPoseFixed = false; 
     finalPoseLandmarks = null;
     isChallengeStarted = false;
     isInPreparationPhase = false; 
@@ -208,6 +210,7 @@ function resetChallenge(nextStage = false) {
 
     if (currentChallengeIndex < CHALLENGES.length) {
         const nextChallenge = CHALLENGES[currentChallengeIndex];
+        // 初期メッセージも、チャレンジ名を合わせて表示
         guideMessageElement.textContent = `カメラ起動完了！チャレンジ開始のため、両手を垂直に上げてポーズを維持してください。`;
         timerDisplayElement.classList.remove('show-timer');
         
@@ -217,7 +220,7 @@ function resetChallenge(nextStage = false) {
         }
     } else {
         showFinalResults();
-        //最終結果表示時、チャレンジ名をクリア
+        // 最終結果表示時、チャレンジ名をクリア
         if (currentChallengeNameElement) {
             currentChallengeNameElement.textContent = '全チャレンジ完了！';
         }
@@ -269,21 +272,52 @@ function startPreparationPhase() {
     }, PREP_DELAY_SECONDS * 1000);
 }
 
+// チャレンジ強制開始関数
+function forceStartChallenge() {
+    // 既にチャレンジ中ではないか、最終結果表示中でないかを確認
+    if (isChallengeStarted || currentChallengeIndex >= CHALLENGES.length) {
+        console.warn("チャレンジは既に進行中か、全て完了しています。");
+        // もし完了しているなら、最初のチャレンジにリセット
+        if (currentChallengeIndex >= CHALLENGES.length) {
+            currentChallengeIndex = 0;
+            resetChallenge(false);
+            // resetChallengeがメッセージを更新するため、その後でタイマーを開始
+        } else {
+             return;
+        }
+    }
+
+    // 準備フェーズをスキップし、タイマーを直接開始
+    isInPreparationPhase = false; 
+    startChallengeTimer();
+    console.log(`デバッグモード: チャレンジ ${CHALLENGES[currentChallengeIndex].name} を強制開始しました。`);
+}
+
 
 /**
- * カウントダウンタイマーを開始する (変更なし)
+ * カウントダウンタイマーを開始する 
  */
 function startChallengeTimer() {
     if (isChallengeStarted) return;
     isChallengeStarted = true;
 
     timerDisplayElement.classList.add('show-timer');
-    guideMessageElement.textContent = '⏱️ 計測開始！';
+    
+    // タイマー開始時もチャレンジ名を再確認して表示を維持
+    const currentChallenge = CHALLENGES[currentChallengeIndex];
+    if (currentChallengeNameElement) {
+        currentChallengeNameElement.textContent = `▶️ ${currentChallenge.name}`;
+    }
 
     const startTime = Date.now();
 
     challengeTimerId = setInterval(() => {
         const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        
+        // タイマー実行中は、チャレンジ名を常に上部に表示し、ガイドメッセージはタイマーに集中させる
+        if (currentChallengeNameElement) {
+            currentChallengeNameElement.textContent = `▶️ ${currentChallenge.name}`;
+        }
 
         if (elapsed < COUNTDOWN_SECONDS) {
             const remaining = COUNTDOWN_SECONDS - elapsed;
@@ -295,9 +329,29 @@ function startChallengeTimer() {
             guideMessageElement.textContent = `ポーズを維持してください！測定中... ${holdTime + 1} / ${HOLD_SECONDS} 秒`;
         } else {
             clearInterval(challengeTimerId);
-            isPoseFixed = true;
-            timerDisplayElement.classList.remove('show-timer');
-            guideMessageElement.textContent = 'ポーズ確定！最終スコアを計算中です。';
+            
+            // ★ 修正箇所: ポーズが固定されなかった場合 (finalPoseLandmarksがnull) の強制終了処理を追加
+            if (!finalPoseLandmarks) {
+                // スコアを0%として強制確定させる
+                CHALLENGES[currentChallengeIndex].score = 0;
+                matchScoreElement.textContent = '0.0 % (FINAL)';
+                matchScoreElement.style.color = '#F44336';
+                guideMessageElement.textContent = `${CHALLENGES[currentChallengeIndex].name} 完了。ポーズが確定できませんでした。`;
+                
+                if (currentChallengeNameElement) {
+                    currentChallengeNameElement.textContent = `❌ ${CHALLENGES[currentChallengeIndex].name}`;
+                }
+
+                // 1秒後に次のチャレンジへ移行または終了
+                setTimeout(() => {
+                    resetChallenge(true);
+                }, 1000);
+            } else {
+                // 通常通りポーズが確定した場合の処理
+                isPoseFixed = true;
+                timerDisplayElement.classList.remove('show-timer');
+                guideMessageElement.textContent = 'ポーズ確定！最終スコアを計算中です。';
+            }
         }
     }, 1000);
 }
@@ -334,11 +388,17 @@ const camera = new Camera(videoElement, {
 
 // カメラ起動処理
 camera.start().then(() => {
-    guideMessageElement.textContent = `カメラ起動完了！チャレンジ開始のため、両手をゆっくり垂直に上げてポーズを維持してください。`;
-    //カメラ起動時に最初のチャレンジ名を表示
+    // 初期表示のメッセージをよりシンプルに
+    guideMessageElement.textContent = `開始準備OK！両手を垂直に上げてチャレンジを開始してください。`;
     if (currentChallengeIndex < CHALLENGES.length && currentChallengeNameElement) {
         currentChallengeNameElement.textContent = `▶️ ${CHALLENGES[currentChallengeIndex].name}`;
     }
+    
+    // ボタンにイベントリスナーを追加
+    if (debugStartButton) {
+        debugStartButton.addEventListener('click', forceStartChallenge);
+    }
+
 }).catch(error => {
     guideMessageElement.textContent = `エラー: カメラの起動に失敗しました。アクセスを許可してください。 (${error.name})`;
     console.error("Camera start failed:", error);
@@ -361,7 +421,7 @@ function onResults(results) {
             startPreparationPhase();
         }
 
-        // 2. 🚨 ポーズ固定の瞬間、データを保存 (確定処理)
+        // 2. ポーズ固定の瞬間、データを保存 (確定処理)
         if (isPoseFixed && !finalPoseLandmarks) {
             finalPoseLandmarks = JSON.parse(JSON.stringify(results.poseLandmarks));
             
@@ -380,11 +440,18 @@ function onResults(results) {
                 matchScoreElement.style.color = '#F44336';
                 guideMessageElement.textContent = `${CHALLENGES[currentChallengeIndex].name} 完了。惜しかったです！`;
             }
+            
+            // ポーズ確定時もチャレンジ名を維持
+             if (currentChallengeNameElement) {
+                 currentChallengeNameElement.textContent = `✅ ${CHALLENGES[currentChallengeIndex].name}`;
+             }
 
             // 1秒後に次のチャレンジへ移行または終了
             setTimeout(() => {
                 resetChallenge(true);
             }, 1000); 
+            
+            // ★ 修正箇所: onResultsの外でisPoseFixedを操作しない
         }
 
         // 3. 描画とスコア表示の更新

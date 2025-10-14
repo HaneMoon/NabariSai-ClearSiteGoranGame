@@ -76,10 +76,16 @@ h1 {
     justify-content: flex-start; 
 }
 
-#main-worninag{
-color:red;
-font-size: 100px;
+/* ★ 修正箇所: チャレンジ名表示のスタイル追加 (index.htmlでstyle指定済みのため補助的に追加) */
+#current-challenge-name {
+    margin: 10px 0;
+    color: #007bff; /* メインカラーに合わせて青に */
+    font-size: 1.5em;
+    min-height: 25px; /* レイアウト崩れ防止 */
+    font-weight: bold;
 }
+
+
 #match-score {
     font-size: 3em;
     font-weight: bold;
