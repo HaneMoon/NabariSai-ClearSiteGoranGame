@@ -3,7 +3,8 @@ import {
     CHALLENGES,
     TARGET_ANGLES,
     TOLERANCE,
-    LANDMARKS as LANDMARK_INDICES
+    LANDMARKS as LANDMARK_INDICES,
+    TARGET_CONNECTIONS // ★ 修正: challenges.jsでexportされたため、これでエラー解消
 } from './challenges.js';
 
 const videoElement = document.getElementById('video');
@@ -97,7 +98,7 @@ function isStartPoseAchieved(landmarks) {
 }
 
 /**
- * マッチングロジック (最終スコア計算) - 全身対応に更新 (変更なし)
+ * マッチングロジック (最終スコア計算) - 全身対応に更新
  */
 function calculateMatchScore(currentLandmarks) {
     const challenge = CHALLENGES[currentChallengeIndex];
@@ -145,10 +146,13 @@ function calculateMatchScore(currentLandmarks) {
         const R_A = L.RIGHT_ANKLE;
         const R_H = L.RIGHT_HIP;
         const L_H = L.LEFT_HIP;
+        const L_K = L.LEFT_KNEE;
+        const L_A = L.LEFT_ANKLE;
 
-        // 可視性チェック: 軸足の膝・足首と両腰
+        // 可視性チェック: 軸足の膝・足首と両腰、浮かせた足の膝・足首
         if (currentLandmarks[R_K].visibility < 0.7 || currentLandmarks[R_A].visibility < 0.7 || 
-            currentLandmarks[R_H].visibility < 0.7 || currentLandmarks[L_H].visibility < 0.7) {
+            currentLandmarks[R_H].visibility < 0.7 || currentLandmarks[L_H].visibility < 0.7 ||
+            currentLandmarks[L_K].visibility < 0.7 || currentLandmarks[L_A].visibility < 0.7) {
             return 0;
         }
 
@@ -180,6 +184,19 @@ function calculateMatchScore(currentLandmarks) {
         
         totalScore += hipBalanceScore;
         jointCount += 1;
+        
+        // 2-4. 浮かせた足の膝の角度 (腰-膝-足首)
+        // ★ 修正: TARGET_ANGLES.KNEE_UPの安全チェックを追加（これにより、前回発生していたかもしれないランタイムエラーを防止）
+        if (!target.KNEE_UP) { 
+             // challenges.jsで定義したので、このエラーは発生しなくなるはず
+             return 0;
+        }
+        const currentLiftedKneeAngle = calculateAngle(currentLandmarks[L_H], currentLandmarks[L_K], currentLandmarks[L_A]);
+        const diffLiftedKnee = Math.abs(currentLiftedKneeAngle - target.KNEE_UP);
+        const scoreLiftedKnee = 100 * (1 - (diffLiftedKnee / tolerance.KNEE));
+        
+        totalScore += Math.max(0, scoreLiftedKnee);
+        jointCount += 1;
     }
 
     if (jointCount === 0) return 0;
@@ -187,13 +204,121 @@ function calculateMatchScore(currentLandmarks) {
     return Math.min(100, totalScore / jointCount); 
 }
 
+// ★ 追加: 目標ポーズのランドマークを生成する関数
+function getTargetPoseLandmarks(currentLandmarks) {
+    if (!currentLandmarks) return null;
+
+    const L = LANDMARK_INDICES;
+    const W = canvasElement.width;
+    const H = canvasElement.height;
+
+    // ユーザーの体の中心とスケールを取得 (目標ポーズの相対的な位置を決定するため)
+    const centerHipX = (currentLandmarks[L.LEFT_HIP].x + currentLandmarks[L.RIGHT_HIP].x) / 2;
+    const centerHipY = (currentLandmarks[L.LEFT_HIP].y + currentLandmarks[L.RIGHT_HIP].y) / 2;
+    const shoulderDistance = Math.abs(currentLandmarks[L.LEFT_SHOULDER].x - currentLandmarks[L.RIGHT_SHOULDER].x);
+    const bodyScale = shoulderDistance * W; // 肩幅をスケールの目安とする
+
+    // ランドマークの初期テンプレート（可視性・存在感を模倣）
+    const targetPose = JSON.parse(JSON.stringify(currentLandmarks)).map(l => ({
+        ...l, 
+        x: centerHipX, // 仮の値
+        y: centerHipY, // 仮の値
+        z: 0,
+        visibility: 0.9 
+    }));
+    
+    // ポーズの基点となる関節の位置をユーザーからコピー
+    // 中央のランドマーク（鼻、肩、腰、膝、足首）はユーザーの現在の位置を基準とする
+    const baseIndices = [
+        L.NOSE, L.LEFT_EYE, L.RIGHT_EYE,
+        L.LEFT_SHOULDER, L.RIGHT_SHOULDER,
+        L.LEFT_HIP, L.RIGHT_HIP,
+        L.LEFT_KNEE, L.RIGHT_KNEE,
+        L.LEFT_ANKLE, L.RIGHT_ANKLE,
+    ];
+
+    baseIndices.forEach(i => {
+        if (currentLandmarks[i]) {
+            targetPose[i].x = currentLandmarks[i].x;
+            targetPose[i].y = currentLandmarks[i].y;
+            targetPose[i].z = currentLandmarks[i].z;
+        }
+    });
+    
+    const challenge = CHALLENGES[currentChallengeIndex];
+    
+    // チャレンジごとに目標ポーズの腕/足の位置を計算
+    if (challenge.targetType === 'ARM') {
+        // 腕をまっすぐ上に伸ばす目標ポーズ (肩のY座標より上に手首を配置)
+        
+        // 左腕を垂直に伸ばす (左手上げ・両手上げスタートポーズの左腕)
+        if (challenge.evalJoints[0].includes('L') || isStartPoseAchieved(currentLandmarks)) {
+             targetPose[L.LEFT_ELBOW].x = targetPose[L.LEFT_SHOULDER].x;
+             targetPose[L.LEFT_ELBOW].y = targetPose[L.LEFT_SHOULDER].y - (bodyScale * 0.1); 
+             targetPose[L.LEFT_WRIST].x = targetPose[L.LEFT_SHOULDER].x;
+             targetPose[L.LEFT_WRIST].y = targetPose[L.LEFT_SHOULDER].y - (bodyScale * 0.2); 
+        } else {
+            // 他のチャレンジでは腕を下ろす（中立位置を想定: 肩-肘-手首を垂直に下ろす）
+            targetPose[L.LEFT_ELBOW].x = targetPose[L.LEFT_SHOULDER].x;
+            targetPose[L.LEFT_ELBOW].y = targetPose[L.LEFT_SHOULDER].y + (bodyScale * 0.1); 
+            targetPose[L.LEFT_WRIST].x = targetPose[L.LEFT_SHOULDER].x;
+            targetPose[L.LEFT_WRIST].y = targetPose[L.LEFT_SHOULDER].y + (bodyScale * 0.2); 
+        }
+
+        // 右腕を垂直に伸ばす (右手上げ・両手上げスタートポーズの右腕)
+        if (challenge.evalJoints[0].includes('R') || isStartPoseAchieved(currentLandmarks)) {
+             targetPose[L.RIGHT_ELBOW].x = targetPose[L.RIGHT_SHOULDER].x;
+             targetPose[L.RIGHT_ELBOW].y = targetPose[L.RIGHT_SHOULDER].y - (bodyScale * 0.1); 
+             targetPose[L.RIGHT_WRIST].x = targetPose[L.RIGHT_SHOULDER].x;
+             targetPose[L.RIGHT_WRIST].y = targetPose[L.RIGHT_SHOULDER].y - (bodyScale * 0.2); 
+        } else {
+             // 他のチャレンジでは腕を下ろす（中立位置を想定）
+            targetPose[L.RIGHT_ELBOW].x = targetPose[L.RIGHT_SHOULDER].x;
+            targetPose[L.RIGHT_ELBOW].y = targetPose[L.RIGHT_SHOULDER].y + (bodyScale * 0.1); 
+            targetPose[L.RIGHT_WRIST].x = targetPose[L.RIGHT_SHOULDER].x;
+            targetPose[L.RIGHT_WRIST].y = targetPose[L.RIGHT_SHOULDER].y + (bodyScale * 0.2); 
+        }
+    } 
+    
+    else if (challenge.targetType === 'LEG_BALANCE') {
+        // 片足立ち (右足軸、左足上げを想定)
+        
+        // 左足 (浮かせた足) の膝を90度に曲げる
+        // 1. 左膝を腰から少し下げる
+        targetPose[L.LEFT_KNEE].x = targetPose[L.LEFT_HIP].x;
+        targetPose[L.LEFT_KNEE].y = targetPose[L.LEFT_HIP].y + (bodyScale * 0.15); 
+        
+        // 2. 左足首を膝の真横に持ってくる（90度）
+        targetPose[L.LEFT_ANKLE].x = targetPose[L.LEFT_KNEE].x - (bodyScale * 0.15); // 左に持っていく
+        targetPose[L.LEFT_ANKLE].y = targetPose[L.LEFT_KNEE].y; 
+        
+        // 両腕は垂直に上げる目標を維持
+        targetPose[L.LEFT_ELBOW].x = targetPose[L.LEFT_SHOULDER].x;
+        targetPose[L.LEFT_ELBOW].y = targetPose[L.LEFT_SHOULDER].y - (bodyScale * 0.1); 
+        targetPose[L.LEFT_WRIST].x = targetPose[L.LEFT_SHOULDER].x;
+        targetPose[L.LEFT_WRIST].y = targetPose[L.LEFT_SHOULDER].y - (bodyScale * 0.2); 
+        
+        targetPose[L.RIGHT_ELBOW].x = targetPose[L.RIGHT_SHOULDER].x;
+        targetPose[L.RIGHT_ELBOW].y = targetPose[L.RIGHT_SHOULDER].y - (bodyScale * 0.1); 
+        targetPose[L.RIGHT_WRIST].x = targetPose[L.RIGHT_SHOULDER].x;
+        targetPose[L.RIGHT_WRIST].y = targetPose[L.RIGHT_SHOULDER].y - (bodyScale * 0.2); 
+    }
+    
+    // 全てのランドマークを0～1の範囲にクリップ
+    return targetPose.map(l => ({
+        ...l,
+        x: Math.min(1, Math.max(0, l.x)),
+        y: Math.min(1, Math.max(0, l.y))
+    }));
+}
+
 
 // =========================================================================
-// ⏱️ チャレンジ管理ロジック
+// ⏱️ チャレンジ管理ロジック (変更なし)
 // =========================================================================
 
 /**
- * チャレンジをリセットし、次のステージへ進む
+ * チャレンジをリセットし、次のステージへ進む (変更なし)
  */
 function resetChallenge(nextStage = false) {
     // isPoseFixedはonResults内で解除されるべきだが、念の為ここでも確認
@@ -257,7 +382,7 @@ function showFinalResults() {
 }
 
 /**
- * 準備フェーズを開始する
+ * 準備フェーズを開始する (変更なし)
  */
 function startPreparationPhase() {
     if (isChallengeStarted || isInPreparationPhase) return;
@@ -272,7 +397,7 @@ function startPreparationPhase() {
     }, PREP_DELAY_SECONDS * 1000);
 }
 
-// チャレンジ強制開始関数
+// チャレンジ強制開始関数 (変更なし)
 function forceStartChallenge() {
     // 既にチャレンジ中ではないか、最終結果表示中でないかを確認
     if (isChallengeStarted || currentChallengeIndex >= CHALLENGES.length) {
@@ -295,7 +420,7 @@ function forceStartChallenge() {
 
 
 /**
- * カウントダウンタイマーを開始する 
+ * カウントダウンタイマーを開始する (変更なし)
  */
 function startChallengeTimer() {
     if (isChallengeStarted) return;
@@ -330,7 +455,7 @@ function startChallengeTimer() {
         } else {
             clearInterval(challengeTimerId);
             
-            // ★ 修正箇所: ポーズが固定されなかった場合 (finalPoseLandmarksがnull) の強制終了処理を追加
+            // ポーズが固定されなかった場合 (finalPoseLandmarksがnull) の強制終了処理を追加
             if (!finalPoseLandmarks) {
                 // スコアを0%として強制確定させる
                 CHALLENGES[currentChallengeIndex].score = 0;
@@ -373,20 +498,16 @@ pose.onResults(onResults);
 
 const { Camera } = window;
 const camera = new Camera(videoElement, {
+    // ★ 修正: onFrameのロジックをシンプルにし、常にMediaPipeに画像を送り続ける
+    // これにより、カメラがフリーズする可能性を減らす
     onFrame: async () => {
-        // ポーズ固定が解除された直後 (finalPoseLandmarksがnull) も検出を継続する
-        if (!isPoseFixed || (isPoseFixed && !finalPoseLandmarks)) {
-             await pose.send({ image: videoElement });
-        } else if (isPoseFixed && finalPoseLandmarks) {
-            // ポーズが確定し、ランドマークも確定している場合は再描画のみ
-            onResults({ image: videoElement, poseLandmarks: finalPoseLandmarks });
-        }
+        await pose.send({ image: videoElement });
     },
     width: 640,
     height: 480
 });
 
-// カメラ起動処理
+// カメラ起動処理 (変更なし)
 camera.start().then(() => {
     // 初期表示のメッセージをよりシンプルに
     guideMessageElement.textContent = `開始準備OK！両手を垂直に上げてチャレンジを開始してください。`;
@@ -412,9 +533,26 @@ function onResults(results) {
     canvasCtx.save();
     canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
     canvasCtx.globalCompositeOperation = 'source_over';
-    canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+    
+    // results.image がビデオフィード
+    if (results.image) {
+        canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+    }
+
 
     if (results.poseLandmarks) {
+        
+        // ★ 目標ポーズの描画: チャレンジ中または準備中に半透明で表示
+        if (currentChallengeIndex < CHALLENGES.length && !isPoseFixed) {
+            const targetPose = getTargetPoseLandmarks(results.poseLandmarks);
+            if (targetPose) {
+                // 目標ポーズを半透明で描画
+                drawConnectors(canvasCtx, targetPose, TARGET_CONNECTIONS,
+                               { color: 'rgba(0, 123, 255, 0.4)', lineWidth: 4 }); 
+                drawLandmarks(canvasCtx, targetPose,
+                              { color: 'rgba(0, 123, 255, 0.6)', lineWidth: 1, radius: 6 });
+            }
+        }
         
         // 1. チャレンジ開始チェック
         if (!isChallengeStarted && !isInPreparationPhase && currentChallengeIndex < CHALLENGES.length && isStartPoseAchieved(results.poseLandmarks)) {
@@ -441,20 +579,17 @@ function onResults(results) {
                 guideMessageElement.textContent = `${CHALLENGES[currentChallengeIndex].name} 完了。惜しかったです！`;
             }
             
-            // ポーズ確定時もチャレンジ名を維持
              if (currentChallengeNameElement) {
                  currentChallengeNameElement.textContent = `✅ ${CHALLENGES[currentChallengeIndex].name}`;
              }
 
-            // 1秒後に次のチャレンジへ移行または終了
             setTimeout(() => {
                 resetChallenge(true);
             }, 1000); 
             
-            // ★ 修正箇所: onResultsの外でisPoseFixedを操作しない
         }
 
-        // 3. 描画とスコア表示の更新
+        // 3. 描画とスコア表示の更新 (ユーザーのポーズ)
         const drawingLandmarks = finalPoseLandmarks || results.poseLandmarks;
         
         const lineColor = isPoseFixed ? '#FFD700' : '#00FF00'; 
