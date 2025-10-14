@@ -1,33 +1,43 @@
 <!DOCTYPE html>
 <html lang="ja">
-
 <head>
     <meta charset="UTF-8">
     <title>文化祭のやつ2025</title>
     <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
+<<<<<<< HEAD
     <!-- <h1 id="main-worninag">ここはmainブランチだよ</h1> -->
     <div id="main-layout">
+=======
+    <div id="main-layout"> 
+>>>>>>> 322f6bd386b1c93eaf3511d1e81db8b3a4bb07f0
         <div id="video-container">
             <video id="video" playsinline></video>
             <canvas id="canvas"></canvas>
         </div>
+
         <div id="result-box">
-            <p>現在のマッチング度:</p>
-            <span id="match-score">14.5 % (平均)</span>
-            <div id="guide-message">
-                **全チャレンジ完了！**...
-            </div>
+            <div id="timer-display"></div>
+            
+            <h2 id="current-challenge-name" style="margin: 10px 0; color: #007bff; font-size: 1.5em; min-height: 25px;">チャレンジ名がここに表示されます</h2>
+            
+            <p>
+                現在のマッチング度: 
+                <span id="match-score">-- %</span>
+            </p>
+            <div id="guide-message">カメラを許可し、両手を垂直に上げてチャレンジを開始してください。</div>
+            
+            <button id="debug-start-button" style="margin-top: 20px; padding: 10px; background-color: #ff6347; color: white; border: none; cursor: pointer; border-radius: 5px;">
+                強制スタート (Debug)
+            </button>
         </div>
     </div>
-
+    
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
-
+    
     <script type="module" src="./script.js"></script>
 </body>
-
 </html>
