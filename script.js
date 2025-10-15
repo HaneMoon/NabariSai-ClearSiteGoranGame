@@ -44,25 +44,42 @@ let challengeTimerId = null;
 
 /**
  * 全チャレンジから指定数（5個）をランダムに選択し、CURRENT_CHALLENGESを初期化する
+ * ★ 変更点1: チャレンジを VERTICAL と T_POSE グループに分けて選択するロジックに変更
  */
 function initializeChallenges() {
-    const NUM_CHALLENGES = 5;
+    const NUM_VERTICAL_CHALLENGES = 1; // 左手上げのみ
+    const NUM_T_POSE_CHALLENGES = 4; // 残りの4つ
+
+    // 左手上げチャレンジを特定
+    const liftLeftChallenge = ALL_CHALLENGES.find(c => c.id === 'LIFT_LEFT');
     
+    // T_POSE グループのチャレンジリスト (左手上げ以外)
+    let tPoseAvailableChallenges = ALL_CHALLENGES.filter(c => c.id !== 'LIFT_LEFT');
+
     // 既存のチャレンジリストをクリア
     CURRENT_CHALLENGES.length = 0;
+
+    // 1. VERTICAL (垂直) スタートポーズのチャレンジを選択 (LIFT_LEFT)
+    if (liftLeftChallenge) {
+        // LIFT_LEFTを確実に追加
+        CURRENT_CHALLENGES.push({ ...liftLeftChallenge, score: null });
+    }
     
-    // シャッフル用の一時配列
-    let availableChallenges = [...ALL_CHALLENGES];
-    
-    // 乱数で5つのチャレンジを選択
-    for (let i = 0; i < NUM_CHALLENGES; i++) {
-        if (availableChallenges.length === 0) break;
+    // 2. T_POSE スタートポーズのチャレンジを選択 (ランダムで4つ)
+    for (let i = 0; i < NUM_T_POSE_CHALLENGES; i++) {
+        if (tPoseAvailableChallenges.length === 0) break;
         
-        const randomIndex = Math.floor(Math.random() * availableChallenges.length);
-        const selectedChallenge = availableChallenges.splice(randomIndex, 1)[0];
+        const randomIndex = Math.floor(Math.random() * tPoseAvailableChallenges.length);
+        const selectedChallenge = tPoseAvailableChallenges.splice(randomIndex, 1)[0];
         
         // スコアを初期化して実行リストに追加
         CURRENT_CHALLENGES.push({ ...selectedChallenge, score: null });
+    }
+    
+    // 実行順をシャッフル (左手上げが最初に来るのを防ぐ)
+    for (let i = CURRENT_CHALLENGES.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [CURRENT_CHALLENGES[i], CURRENT_CHALLENGES[j]] = [CURRENT_CHALLENGES[j], CURRENT_CHALLENGES[i]];
     }
 }
 
@@ -126,7 +143,7 @@ function isArmPoseAchieved(landmarks, shoulderTarget, elbowTarget, tolerance) {
 }
 
 /**
- * 起動トリガー用のポーズ (両腕垂直上げ) が取られているか判定する
+ * 起動トリガー用のポーズ (両腕垂直上げ) が取られているか判定する (変更なし)
  */
 function isVerticalStartPoseAchieved(landmarks) {
     const target = TARGET_ANGLES;
@@ -135,7 +152,7 @@ function isVerticalStartPoseAchieved(landmarks) {
 }
 
 /**
- * ★ 修正点5: 起動トリガー用のポーズ (T字ポーズ) が取られているか判定する
+ * ★ 修正点5: 起動トリガー用のポーズ (T字ポーズ) が取られているか判定する (変更なし)
  */
 function isTPoseStartPoseAchieved(landmarks) {
     const target = TARGET_ANGLES;
@@ -145,7 +162,7 @@ function isTPoseStartPoseAchieved(landmarks) {
 
 
 /**
- * マッチングロジック (最終スコア計算) - 不正ポーズチェックロジックを最終修正
+ * マッチングロジック (最終スコア計算) (変更なし)
  */
 function calculateMatchScore(currentLandmarks) {
     // ★ 修正点6: CURRENT_CHALLENGES を参照するように変更
@@ -274,17 +291,9 @@ function calculateMatchScore(currentLandmarks) {
 
     }
     
-    // --- 2. LEG_BALANCEチャレンジ (片足立ち) の評価 ---
-    // else if (challenge.targetType === 'LEG_BALANCE') {
-    //     // ... ロジックは削除済み ...
-    // }
-    
-    // --- 3. その他のチャレンジ (新しく追加されたポーズ) の評価 ---
-    // else if (challenge.targetType === 'SQUAT' || challenge.targetType === 'WARRIOR') {
-    //     // ... ロジックは削除済み ...
-    // }
+    // 削除されたチャレンジのロジックは既に消去済み
 
-    // ★ 修正点7: 以前のコードで残っていた冗長なチェックを削除し、ジョイントカウントが0の場合のみ0を返すようにシンプル化
+    // ★ 修正点7: ジョイントカウントが0の場合のみ0を返すように修正
     if (jointCount === 0) return 0;
     
     return Math.min(100, totalScore / jointCount); 
@@ -297,6 +306,7 @@ function calculateMatchScore(currentLandmarks) {
 
 /**
  * チャレンジをリセットし、次のステージへ進む
+ * ★ 変更点2: requiredStartPose を参照し、次のスタートポーズを設定
  */
 function resetChallenge(nextStage = false) {
     isPoseFixed = false; 
@@ -314,17 +324,19 @@ function resetChallenge(nextStage = false) {
     if (currentChallengeIndex < CURRENT_CHALLENGES.length) {
         const nextChallenge = CURRENT_CHALLENGES[currentChallengeIndex];
         
-        // ★ 修正点9: 次のチャレンジの種類に応じて、次のスタートポーズとメッセージを設定
-        const nextStartChallenge = CURRENT_CHALLENGES[currentChallengeIndex]
+        // ★ 変更点2: 次のチャレンジで必要なスタートポーズを設定
+        const requiredPose = nextChallenge.requiredStartPose;
         
-        // ARMチャレンジとL_SHAPE_ARMSの場合は垂直スタート
-        if (nextStartChallenge.targetType === 'ARM' || nextStartChallenge.targetType === 'L_SHAPE_ARMS') {
+        if (requiredPose === 'VERTICAL') {
              currentStartPoseType = 'VERTICAL';
              guideMessageElement.textContent = `カメラ起動完了！チャレンジ開始のため、両手を垂直に上げてポーズを維持してください。`;
+        } else if (requiredPose === 'T_POSE') {
+             currentStartPoseType = 'T_POSE';
+             guideMessageElement.textContent = `カメラ起動完了！チャレンジ開始のため、両手を水平に広げるT字ポーズを維持してください。`;
         } else {
-             // 予期せぬチャレンジタイプが来た場合のフォールバックを垂直スタートに統一
+             // 予期せぬチャレンジタイプが来た場合のフォールバック
              currentStartPoseType = 'VERTICAL'; 
-             guideMessageElement.textContent = `カメラ起動完了！チャレンジ開始のため、両手を垂直に上げてポーズを維持してください。`;
+             guideMessageElement.textContent = `エラー: チャレンジタイプが不明です。両手を垂直に上げてポーズを維持してください。`;
         }
         
         timerDisplayElement.classList.remove('show-timer');
@@ -371,7 +383,7 @@ function showFinalResults() {
 }
 
 /**
- * 準備フェーズを開始する
+ * 準備フェーズを開始する (変更なし)
  */
 function startPreparationPhase() {
     if (isChallengeStarted || isInPreparationPhase) return;
@@ -387,7 +399,7 @@ function startPreparationPhase() {
     }, PREP_DELAY_SECONDS * 1000);
 }
 
-// チャレンジ強制開始関数
+// チャレンジ強制開始関数 (変更なし)
 function forceStartChallenge() {
     // ★ 修正点12: CURRENT_CHALLENGES の長さを参照
     if (isChallengeStarted || currentChallengeIndex >= CURRENT_CHALLENGES.length) {
@@ -408,7 +420,7 @@ function forceStartChallenge() {
 
 
 /**
- * カウントダウンタイマーを開始する 
+ * カウントダウンタイマーを開始する (変更なし)
  */
 function startChallengeTimer() {
     if (isChallengeStarted) return;
@@ -513,7 +525,7 @@ camera.start().then(() => {
 
 
 /**
- * MediaPipeからの姿勢検出結果を受け取るコールバック
+ * MediaPipeからの姿勢検出結果を受け取るコールバック (変更なし)
  */
 function onResults(results) {
     canvasCtx.save();

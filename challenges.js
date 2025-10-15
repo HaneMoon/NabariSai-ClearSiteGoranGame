@@ -23,14 +23,16 @@ export const ALL_CHALLENGES = [
         name: "両腕L字ポーズ",
         message: "【チャレンジ0】両腕を水平に広げ、肘を直角に曲げたL字ポーズを維持してください。",
         targetType: 'L_SHAPE_ARMS', 
-        evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
+        evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'],
+        requiredStartPose: 'T_POSE', // ★ 変更点1: T字ポーズで開始
     },
     {
         id: 'LIFT_LEFT',
         name: "左手を上げる",
         message: "【チャレンジ1】左手を垂直に上げてポーズを維持してください。",
         targetType: 'ARM', 
-        evalJoints: ['L_SHOULDER', 'L_ELBOW'], 
+        evalJoints: ['L_SHOULDER', 'L_ELBOW'],
+        requiredStartPose: 'VERTICAL', // ★ 変更点1: 垂直ポーズで開始
     },
     {
         id: 'LIFT_RIGHT',
@@ -38,8 +40,8 @@ export const ALL_CHALLENGES = [
         message: "【チャレンジ2】今度は右手を垂直に上げてポーズを維持してください。",
         targetType: 'ARM',
         evalJoints: ['R_SHOULDER', 'R_ELBOW'],
+        requiredStartPose: 'T_POSE', // ★ 変更点1: T字ポーズで開始
     },
-    // 下半身のチャレンジ（LEG_BALANCE, SQUAT, WARRIOR_II）を削除
 ];
 
 // **実行するチャレンジ配列 (script.jsで初期化される)**
