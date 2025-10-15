@@ -1,7 +1,9 @@
 // 必要な定数を challenges.js からインポート
 import {
     ALL_CHALLENGES,
-    CURRENT_CHALLENGES, // ★ 修正点1: 実行するチャレンジ配列
+    CURRENT_CHALLENGES, // 実行するチャレンジ配列
+    VERTICAL_CHALLENGES, // ★ 変更点1: 垂直ポーズグループをインポート
+    T_POSE_CHALLENGES, // ★ 変更点1: T字ポーズグループをインポート
     TARGET_ANGLES,
     TOLERANCE,
     LANDMARKS as LANDMARK_INDICES
@@ -24,13 +26,14 @@ canvasElement.width = 640;
 canvasElement.height = 480;
 
 // 状態管理のための変数
+let currentLandmarksSnapshot = null; // ★ 変更点A: リアルタイムスコア計算用のポーズスナップショット
 let currentChallengeIndex = 0;
-let isPoseFixed = false;
+let isPoseFixed = false; // ★ 変更点A: スコア確定ロジックをタイマーに移すため、この変数は描画判定にのみ使用
 let finalPoseLandmarks = null;
 let isChallengeStarted = false;
 let isInPreparationPhase = false; 
-// ★ 修正点2: 現在有効なスタートポーズを追跡 ('VERTICAL' or 'T_POSE')
 let currentStartPoseType = 'VERTICAL'; 
+let isWaitingForStartPose = true; 
 
 const COUNTDOWN_SECONDS = 3;
 const HOLD_SECONDS = 5;
@@ -43,44 +46,26 @@ let challengeTimerId = null;
 // -------------------------------------------------------------------------
 
 /**
- * 全チャレンジから指定数（5個）をランダムに選択し、CURRENT_CHALLENGESを初期化する
- * ★ 変更点1: チャレンジを VERTICAL と T_POSE グループに分けて選択するロジックに変更
+ * チャレンジリストをクリアし、初期待機状態に戻す
  */
-function initializeChallenges() {
-    const NUM_VERTICAL_CHALLENGES = 1; // 左手上げのみ
-    const NUM_T_POSE_CHALLENGES = 4; // 残りの4つ
-
-    // 左手上げチャレンジを特定
-    const liftLeftChallenge = ALL_CHALLENGES.find(c => c.id === 'LIFT_LEFT');
+function resetWaitingState() {
+    currentChallengeIndex = 0;
+    CURRENT_CHALLENGES.length = 0; // チャレンジリストをクリア
+    isPoseFixed = false; 
+    finalPoseLandmarks = null;
+    currentLandmarksSnapshot = null; // ★ 変更点A: スナップショットをクリア
+    isChallengeStarted = false;
+    isInPreparationPhase = false; 
+    isWaitingForStartPose = true; // 待機状態に戻す
     
-    // T_POSE グループのチャレンジリスト (左手上げ以外)
-    let tPoseAvailableChallenges = ALL_CHALLENGES.filter(c => c.id !== 'LIFT_LEFT');
-
-    // 既存のチャレンジリストをクリア
-    CURRENT_CHALLENGES.length = 0;
-
-    // 1. VERTICAL (垂直) スタートポーズのチャレンジを選択 (LIFT_LEFT)
-    if (liftLeftChallenge) {
-        // LIFT_LEFTを確実に追加
-        CURRENT_CHALLENGES.push({ ...liftLeftChallenge, score: null });
-    }
+    currentStartPoseType = 'VERTICAL'; 
     
-    // 2. T_POSE スタートポーズのチャレンジを選択 (ランダムで4つ)
-    for (let i = 0; i < NUM_T_POSE_CHALLENGES; i++) {
-        if (tPoseAvailableChallenges.length === 0) break;
-        
-        const randomIndex = Math.floor(Math.random() * tPoseAvailableChallenges.length);
-        const selectedChallenge = tPoseAvailableChallenges.splice(randomIndex, 1)[0];
-        
-        // スコアを初期化して実行リストに追加
-        CURRENT_CHALLENGES.push({ ...selectedChallenge, score: null });
-    }
+    matchScoreElement.textContent = '-- %';
+    matchScoreElement.style.color = '#4CAF50'; 
+    timerDisplayElement.classList.remove('show-timer');
     
-    // 実行順をシャッフル (左手上げが最初に来るのを防ぐ)
-    for (let i = CURRENT_CHALLENGES.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [CURRENT_CHALLENGES[i], CURRENT_CHALLENGES[j]] = [CURRENT_CHALLENGES[j], CURRENT_CHALLENGES[i]];
-    }
+    currentChallengeNameElement.textContent = '次のポーズを待機中...';
+    guideMessageElement.textContent = 'チャレンジを開始するには、両手を垂直に上げるか、T字ポーズを維持してください。';
 }
 
 
@@ -111,7 +96,7 @@ function calculateAngle(A, M, B) {
     return angleDeg;
 }
 
-// ★ 修正点4: スタートポーズの判定ロジックを共通化
+// ★ 修正点4: スタートポーズの判定ロジックを共通化 (変更なし)
 function isArmPoseAchieved(landmarks, shoulderTarget, elbowTarget, tolerance) {
     const L = LANDMARK_INDICES;
 
@@ -160,12 +145,10 @@ function isTPoseStartPoseAchieved(landmarks) {
     return isArmPoseAchieved(landmarks, target.T_POSE_SHOULDER, target.T_POSE_ELBOW, tolerance);
 }
 
-
 /**
  * マッチングロジック (最終スコア計算) (変更なし)
  */
 function calculateMatchScore(currentLandmarks) {
-    // ★ 修正点6: CURRENT_CHALLENGES を参照するように変更
     const challenge = CURRENT_CHALLENGES[currentChallengeIndex];
     const L = LANDMARK_INDICES;
     const target = TARGET_ANGLES;
@@ -175,25 +158,21 @@ function calculateMatchScore(currentLandmarks) {
 
     // --- 1. ARMチャレンジ (左手上げ, 右手上げ) の評価 ---
     if (challenge.targetType === 'ARM') {
-        // ... (ARMチャレンジの評価ロジックは変更なし) ...
         const side = challenge.evalJoints[0].includes('L') ? 'LEFT' : 'RIGHT';
-        const otherSide = side === 'LEFT' ? 'RIGHT' : 'LEFT'; // 評価対象外の腕 (ユーザーが下ろすべき腕)
+        const otherSide = side === 'LEFT' ? 'RIGHT' : 'LEFT'; 
         
         const S = L[`${side}_SHOULDER`];
         const E = L[`${side}_ELBOW`];
         const W = L[`${side}_WRIST`];
         const H = L[`${side}_HIP`];
 
-        // 評価対象外の腕のランドマーク
         const otherS = L[`${otherSide}_SHOULDER`];
         const otherE = L[`${otherSide}_ELBOW`];
         const otherW = L[`${otherSide}_WRIST`];
         const otherH = L[`${otherSide}_HIP`];
         
-        // 可視性チェックの閾値
         const VISIBILITY_THRESHOLD = 0.5; 
         
-        // 評価対象の腕の可視性チェック
         const isTargetArmVisible = currentLandmarks[S] && currentLandmarks[E] && 
                                   currentLandmarks[W] && currentLandmarks[H] &&
                                   currentLandmarks[S].visibility > VISIBILITY_THRESHOLD && 
@@ -201,31 +180,28 @@ function calculateMatchScore(currentLandmarks) {
                                   currentLandmarks[W].visibility > VISIBILITY_THRESHOLD;
 
 
-        // 評価対象外の腕が検出されているか
         const isOtherArmVisible = currentLandmarks[otherS] && currentLandmarks[otherE] && 
                                   currentLandmarks[otherW] && currentLandmarks[otherH];
 
-        // 角度計算（不正チェックとスコア計算の両方に利用）
+        // ★ 修正点6: ポーズが全く検出されない場合の早期リターンを追加 (スコア0回避のため)
+        if (!currentLandmarks[L.LEFT_SHOULDER] || currentLandmarks[L.LEFT_SHOULDER].visibility < 0.1) return 0;
+
         const currentTargetElbowAngle = calculateAngle(currentLandmarks[S], currentLandmarks[E], currentLandmarks[W]);
         const currentTargetShoulderAngle = calculateAngle(currentLandmarks[H], currentLandmarks[S], currentLandmarks[E]);
         
-        // 不正判定の基準を厳しくする 
         const targetTolerance = 5; 
 
-        // 評価対象外の腕が検出され、かつ上がっているか
         let isOtherArmUp = false;
         if (isOtherArmVisible) { 
             const otherShoulderAngle = calculateAngle(currentLandmarks[otherH], currentLandmarks[otherS], currentLandmarks[otherE]);
             const otherElbowAngle = calculateAngle(currentLandmarks[otherS], currentLandmarks[otherE], currentLandmarks[otherW]);
             
-            // 評価対象外の腕が「ほぼ完璧に上がっている」場合のみ不正と判定
             isOtherArmUp = (
                 Math.abs(otherShoulderAngle - target.SHOULDER) <= targetTolerance &&
                 Math.abs(otherElbowAngle - target.ELBOW) <= targetTolerance
             );
         }
         
-        // 🚨 不正判定ロジック最終強化 🚨
         if (isOtherArmUp) {
             return 0;
         }
@@ -254,7 +230,10 @@ function calculateMatchScore(currentLandmarks) {
         const VISIBILITY_THRESHOLD = 0.5;
         const targetShoulder = target.L_SHAPE_SHOULDER; // 90度
         const targetElbow = target.L_SHAPE_ELBOW;       // 90度
-        const poseTolerance = tolerance.L_SHAPE_TOLERANCE; // L字ポーズ専用の許容誤差を使用
+        const poseTolerance = tolerance.L_SHAPE_TOLERANCE; 
+        
+        // ★ 修正点6: ポーズが全く検出されない場合の早期リターンを追加
+        if (!currentLandmarks[L.LEFT_SHOULDER] || currentLandmarks[L.LEFT_SHOULDER].visibility < 0.1) return 0;
         
         for (const side of sides) {
             const S = L[`${side}_SHOULDER`];
@@ -262,7 +241,6 @@ function calculateMatchScore(currentLandmarks) {
             const W = L[`${side}_WRIST`];
             const H = L[`${side}_HIP`];
             
-            // 可視性チェック
             const isArmVisible = currentLandmarks[S] && currentLandmarks[E] && 
                                   currentLandmarks[W] && currentLandmarks[H] &&
                                   currentLandmarks[S].visibility > VISIBILITY_THRESHOLD && 
@@ -270,14 +248,12 @@ function calculateMatchScore(currentLandmarks) {
                                   currentLandmarks[W].visibility > VISIBILITY_THRESHOLD;
 
             if (!isArmVisible) {
-                return 0; // 片腕でも見えなければ0点
+                return 0; 
             }
 
-            // 角度計算
             const currentElbowAngle = calculateAngle(currentLandmarks[S], currentLandmarks[E], currentLandmarks[W]);
             const currentShoulderAngle = calculateAngle(currentLandmarks[H], currentLandmarks[S], currentLandmarks[E]);
             
-            // スコア計算
             const diffElbow = Math.abs(currentElbowAngle - targetElbow);
             const diffShoulder = Math.abs(currentShoulderAngle - targetShoulder);
             
@@ -291,9 +267,7 @@ function calculateMatchScore(currentLandmarks) {
 
     }
     
-    // 削除されたチャレンジのロジックは既に消去済み
-
-    // ★ 修正点7: ジョイントカウントが0の場合のみ0を返すように修正
+    // ★ 修正点7: jointCountが0の場合は、ポーズが見つからなかったと判断し0を返す
     if (jointCount === 0) return 0;
     
     return Math.min(100, totalScore / jointCount); 
@@ -305,8 +279,7 @@ function calculateMatchScore(currentLandmarks) {
 // =========================================================================
 
 /**
- * チャレンジをリセットし、次のステージへ進む
- * ★ 変更点2: requiredStartPose を参照し、次のスタートポーズを設定
+ * チャレンジをリセットし、次のステージへ進む (変更なし)
  */
 function resetChallenge(nextStage = false) {
     isPoseFixed = false; 
@@ -320,66 +293,80 @@ function resetChallenge(nextStage = false) {
         currentChallengeIndex++;
     }
 
-    // ★ 修正点8: CURRENT_CHALLENGES を参照
     if (currentChallengeIndex < CURRENT_CHALLENGES.length) {
+        // 次のチャレンジへ
         const nextChallenge = CURRENT_CHALLENGES[currentChallengeIndex];
         
-        // ★ 変更点2: 次のチャレンジで必要なスタートポーズを設定
-        const requiredPose = nextChallenge.requiredStartPose;
+        currentStartPoseType = nextChallenge.requiredStartPose; // 開始ポーズはここでロックされる
         
-        if (requiredPose === 'VERTICAL') {
-             currentStartPoseType = 'VERTICAL';
-             guideMessageElement.textContent = `カメラ起動完了！チャレンジ開始のため、両手を垂直に上げてポーズを維持してください。`;
-        } else if (requiredPose === 'T_POSE') {
-             currentStartPoseType = 'T_POSE';
-             guideMessageElement.textContent = `カメラ起動完了！チャレンジ開始のため、両手を水平に広げるT字ポーズを維持してください。`;
-        } else {
-             // 予期せぬチャレンジタイプが来た場合のフォールバック
-             currentStartPoseType = 'VERTICAL'; 
-             guideMessageElement.textContent = `エラー: チャレンジタイプが不明です。両手を垂直に上げてポーズを維持してください。`;
-        }
+        guideMessageElement.textContent = `次のチャレンジ: ${nextChallenge.name} ポーズを確認！そのままでお待ちください...`;
         
         timerDisplayElement.classList.remove('show-timer');
         
         if (currentChallengeNameElement) {
             currentChallengeNameElement.textContent = `▶️ ${nextChallenge.name}`;
         }
+        
+        // ★ 修正点8: 連続チャレンジの場合、状態遷移を安定させるため、遅延を入れて準備フェーズを開始
+        setTimeout(() => {
+            startPreparationPhase(); 
+        }, 50); // 50msの短い遅延
+        
+
     } else {
-        showFinalResults();
-        if (currentChallengeNameElement) {
-            currentChallengeNameElement.textContent = '全チャレンジ完了！';
-        }
+        // 全チャレンジ完了 -> 平均スコアを表示
+        showChallengeResults();
     }
 }
 
 /**
  * 最終結果を表示する (変更なし)
  */
-function showFinalResults() {
+function showChallengeResults() {
     let totalScore = 0;
     let scoreList = "";
     
-    // ★ 修正点10: CURRENT_CHALLENGES を参照
     CURRENT_CHALLENGES.forEach((c) => {
         totalScore += c.score;
         scoreList += `${c.name}: ${c.score.toFixed(1)}%\n`;
     });
     
+    const isTPoseGroup = CURRENT_CHALLENGES.length > 1; 
     const averageScore = totalScore / CURRENT_CHALLENGES.length;
-    matchScoreElement.textContent = averageScore.toFixed(1) + ' % (平均)';
+
+    let messageHTML;
     
-    if (averageScore > 90) {
-        matchScoreElement.style.color = '#4CAF50';
-        guideMessageElement.innerHTML = `🎉 **全チャレンジ完了！** 平均スコア: ${averageScore.toFixed(1)}%<br>素晴らしいパーフェクト達成です！`;
+    if (isTPoseGroup) {
+        // T字ポーズグループの平均スコア表示
+        if (averageScore > 85) {
+            matchScoreElement.style.color = '#4CAF50';
+            messageHTML = `🎉 **連続チャレンジ完了！** 平均スコア: ${averageScore.toFixed(1)}%<br>素晴らしいパーフェクト達成です！`;
+        } else {
+            matchScoreElement.style.color = '#FFC107';
+            messageHTML = `**連続チャレンジ完了！** 平均スコア: ${averageScore.toFixed(1)}%<br>結果をコンソールで確認し、もう一度チャレンジしましょう！`;
+        }
+        matchScoreElement.textContent = averageScore.toFixed(1) + ' % (平均)';
     } else {
-        matchScoreElement.style.color = '#FFC107';
-        guideMessageElement.innerHTML = `**全チャレンジ完了！** 平均スコア: ${averageScore.toFixed(1)}%<br>結果をコンソールで確認し、もう一度チャレンジしましょう！`;
+        // 垂直ポーズ（チュートリアル）の結果表示
+        if (averageScore > 90) {
+            matchScoreElement.style.color = '#4CAF50';
+            messageHTML = `🌟 **${CURRENT_CHALLENGES[0].name} 完了！** 素晴らしいです！`;
+        } else {
+            matchScoreElement.style.color = '#FFC107';
+            messageHTML = `**${CURRENT_CHALLENGES[0].name} 完了！** もう一度チャレンジしましょう！`;
+        }
+        matchScoreElement.textContent = averageScore.toFixed(1) + ' % (FINAL)';
     }
 
-    console.log("--- FINAL CHALLENGE RESULTS ---");
+    guideMessageElement.innerHTML = messageHTML;
+
+    console.log("--- CHALLENGE RESULTS ---");
     console.log(scoreList);
     console.log(`Average Score: ${averageScore.toFixed(1)}%`);
     console.log("------------------------------");
+    
+    // 結果表示後、数秒待って待機状態に戻す
+    setTimeout(resetWaitingState, 3000); 
 }
 
 /**
@@ -388,10 +375,10 @@ function showFinalResults() {
 function startPreparationPhase() {
     if (isChallengeStarted || isInPreparationPhase) return;
     isInPreparationPhase = true;
+    isWaitingForStartPose = false; // 待機状態を解除
 
-    // ★ 修正点11: CURRENT_CHALLENGES を参照
     const currentChallenge = CURRENT_CHALLENGES[currentChallengeIndex];
-    guideMessageElement.textContent = `✅ ${currentChallenge.message.replace(/【チャレンジ\d\/\d】/, '')} ポーズを確認！そのままでお待ちください...`;
+    guideMessageElement.textContent = `✅ ${currentChallenge.message.replace(/【.+】/, '')} ポーズを確認！そのままでお待ちください...`;
     
     setTimeout(() => {
         isInPreparationPhase = false;
@@ -399,28 +386,35 @@ function startPreparationPhase() {
     }, PREP_DELAY_SECONDS * 1000);
 }
 
-// チャレンジ強制開始関数 (変更なし)
+// チャレンジ強制開始関数
 function forceStartChallenge() {
-    // ★ 修正点12: CURRENT_CHALLENGES の長さを参照
-    if (isChallengeStarted || currentChallengeIndex >= CURRENT_CHALLENGES.length) {
-        console.warn("チャレンジは既に進行中か、全て完了しています。");
-        if (currentChallengeIndex >= CURRENT_CHALLENGES.length) {
-            currentChallengeIndex = 0;
-            initializeChallenges(); // 完了時はリストを再生成
-            resetChallenge(false);
-        } else {
-             return;
-        }
+    if (isChallengeStarted || isInPreparationPhase) {
+        console.warn("チャレンジは既に進行中です。");
+        return;
     }
-
+    
+    // T_POSEグループからランダムにチャレンジを選択して実行
+    const selected = [...T_POSE_CHALLENGES];
+    // 実行順をシャッフル
+    for (let i = selected.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [selected[i], selected[j]] = [selected[j], selected[i]];
+    }
+    
+    CURRENT_CHALLENGES.length = 0;
+    selected.forEach(c => CURRENT_CHALLENGES.push({ ...c, score: null }));
+    currentStartPoseType = 'T_POSE'; 
+    currentChallengeIndex = 0; // ★ 修正点: 常に0にセット
+    
     isInPreparationPhase = false; 
     startChallengeTimer();
-    console.log(`デバッグモード: チャレンジ ${CURRENT_CHALLENGES[currentChallengeIndex].name} を強制開始しました。`);
+    console.log(`デバッグモード: チャレンジ ${CURRENT_CHALLENGES.map(c => c.name).join(', ')} を強制開始しました。`);
 }
 
 
 /**
- * カウントダウンタイマーを開始する (変更なし)
+ * カウントダウンタイマーを開始する 
+ * ★ 変更点B: タイマー終了時にポーズを確定させ、スコアを記録する
  */
 function startChallengeTimer() {
     if (isChallengeStarted) return;
@@ -428,7 +422,6 @@ function startChallengeTimer() {
 
     timerDisplayElement.classList.add('show-timer');
     
-    // ★ 修正点13: CURRENT_CHALLENGES を参照
     const currentChallenge = CURRENT_CHALLENGES[currentChallengeIndex];
     if (currentChallengeNameElement) {
         currentChallengeNameElement.textContent = `▶️ ${currentChallenge.name}`;
@@ -452,27 +445,48 @@ function startChallengeTimer() {
             timerDisplayElement.textContent = 'GO!';
             guideMessageElement.textContent = `ポーズを維持してください！測定中... ${holdTime + 1} / ${HOLD_SECONDS} 秒`;
         } else {
+            // ★ 変更点B: タイマー終了! スコアを確定させるロジックをここに移動
             clearInterval(challengeTimerId);
             
-            // ★ 修正点14: CURRENT_CHALLENGES を参照
-            if (!finalPoseLandmarks) {
+            // finalPoseLandmarksの代わりに currentLandmarksSnapshot を使用
+            if (currentLandmarksSnapshot) {
+                const score = calculateMatchScore(currentLandmarksSnapshot);
+                CURRENT_CHALLENGES[currentChallengeIndex].score = score;
+                
+                // 表示を更新
+                matchScoreElement.textContent = score.toFixed(1) + ' % (FINAL)';
+                isPoseFixed = true; // 描画ロジックのために true にセット
+                finalPoseLandmarks = currentLandmarksSnapshot; // 描画ロジックのためにスナップショットをセット
+                
+                if (score > 90) {
+                    matchScoreElement.style.color = '#4CAF50'; 
+                    guideMessageElement.textContent = `🌟 ${CURRENT_CHALLENGES[currentChallengeIndex].name} 完了！パーフェクト達成です！`;
+                } else if (score > 70) {
+                    matchScoreElement.style.color = '#FFC107';
+                    guideMessageElement.textContent = `${CURRENT_CHALLENGES[currentChallengeIndex].name} 完了！もう少しで目標達成でした！`;
+                } else {
+                    matchScoreElement.style.color = '#F44336';
+                    guideMessageElement.textContent = `${CURRENT_CHALLENGES[currentChallengeIndex].name} 完了。惜しかったです！`;
+                }
+            } else {
+                // スナップショットが取得できなかった場合 (カメラエラーや人が写っていない)
                 CURRENT_CHALLENGES[currentChallengeIndex].score = 0;
                 matchScoreElement.textContent = '0.0 % (FINAL)';
                 matchScoreElement.style.color = '#F44336';
-                guideMessageElement.textContent = `${CURRENT_CHALLENGES[currentChallengeIndex].name} 完了。ポーズが確定できませんでした。`;
-                
-                if (currentChallengeNameElement) {
-                    currentChallengeNameElement.textContent = `❌ ${CURRENT_CHALLENGES[currentChallengeIndex].name}`;
-                }
-
-                setTimeout(() => {
-                    resetChallenge(true);
-                }, 1000);
-            } else {
-                isPoseFixed = true;
-                timerDisplayElement.classList.remove('show-timer');
-                guideMessageElement.textContent = 'ポーズ確定！最終スコアを計算中です。';
+                guideMessageElement.textContent = `${CURRENT_CHALLENGES[currentChallengeIndex].name} 完了。ポーズが検出できませんでした。`;
+                isPoseFixed = true; 
             }
+            
+            timerDisplayElement.classList.remove('show-timer');
+            
+             if (currentChallengeNameElement) {
+                 currentChallengeNameElement.textContent = `✅ ${CURRENT_CHALLENGES[currentChallengeIndex].name}`;
+             }
+
+            // スコア確定後、次のチャレンジへ移行
+            setTimeout(() => {
+                resetChallenge(true);
+            }, 1000); 
         }
     }, 1000);
 }
@@ -507,11 +521,7 @@ const camera = new Camera(videoElement, {
 
 // カメラ起動処理
 camera.start().then(() => {
-    // ★ 修正点15: チャレンジリストを初期化
-    initializeChallenges(); 
-    
-    // 初期メッセージは最初のチャレンジに応じて設定
-    resetChallenge(false);
+    resetWaitingState(); 
     
     // ボタンにイベントリスナーを追加
     if (debugStartButton) {
@@ -525,7 +535,8 @@ camera.start().then(() => {
 
 
 /**
- * MediaPipeからの姿勢検出結果を受け取るコールバック (変更なし)
+ * MediaPipeからの姿勢検出結果を受け取るコールバック
+ * ★ 変更点C: リアルタイムスコア計算用スナップショットの更新と、ポーズ固定ロジックの削除
  */
 function onResults(results) {
     canvasCtx.save();
@@ -535,63 +546,62 @@ function onResults(results) {
 
     if (results.poseLandmarks) {
         
-        // 1. チャレンジ開始チェック
-        // ★ 修正点16: スタートポーズの判定ロジックを分岐
-        let isStartPoseReady = false;
-        
-        if (currentStartPoseType === 'VERTICAL') {
-            isStartPoseReady = isVerticalStartPoseAchieved(results.poseLandmarks);
-        } else if (currentStartPoseType === 'T_POSE') {
-            isStartPoseReady = isTPoseStartPoseAchieved(results.poseLandmarks);
-        }
-        
-        if (!isChallengeStarted && !isInPreparationPhase && currentChallengeIndex < CURRENT_CHALLENGES.length && isStartPoseReady) {
-            startPreparationPhase();
-        }
+        // --- 1. チャレンジ開始トリガー判定 ---
+        if (isWaitingForStartPose && !isChallengeStarted && !isInPreparationPhase) {
+            let isVerticalReady = isVerticalStartPoseAchieved(results.poseLandmarks);
+            let isTPoseReady = isTPoseStartPoseAchieved(results.poseLandmarks);
 
-        // 2. ポーズ固定の瞬間、データを保存 (確定処理)
-        if (isPoseFixed && !finalPoseLandmarks) {
-            finalPoseLandmarks = JSON.parse(JSON.stringify(results.poseLandmarks));
-            
-            const score = calculateMatchScore(finalPoseLandmarks);
-            // ★ 修正点17: CURRENT_CHALLENGES を参照
-            CURRENT_CHALLENGES[currentChallengeIndex].score = score;
-            
-            matchScoreElement.textContent = score.toFixed(1) + ' % (FINAL)';
-
-            if (score > 90) {
-                matchScoreElement.style.color = '#4CAF50'; 
-                guideMessageElement.textContent = `🌟 ${CURRENT_CHALLENGES[currentChallengeIndex].name} 完了！パーフェクト達成です！`;
-            } else if (score > 70) {
-                matchScoreElement.style.color = '#FFC107';
-                guideMessageElement.textContent = `${CURRENT_CHALLENGES[currentChallengeIndex].name} 完了！もう少しで目標達成でした！`;
-            } else {
-                matchScoreElement.style.color = '#F44336';
-                guideMessageElement.textContent = `${CURRENT_CHALLENGES[currentChallengeIndex].name} 完了。惜しかったです！`;
+            if (isVerticalReady || isTPoseReady) {
+                
+                // チャレンジリストを決定
+                CURRENT_CHALLENGES.length = 0;
+                
+                if (isVerticalReady) {
+                    // 垂直ポーズ: 左手上げのみをチュートリアルとして実行
+                    CURRENT_CHALLENGES.push({ ...VERTICAL_CHALLENGES[0], score: null });
+                    currentStartPoseType = 'VERTICAL';
+                    currentChallengeNameElement.textContent = `▶️ ${VERTICAL_CHALLENGES[0].name} 準備中...`;
+                    
+                } else if (isTPoseReady) {
+                    // T字ポーズ: 2つのチャレンジをランダムに実行
+                    const selected = [...T_POSE_CHALLENGES];
+                    // 実行順をシャッフル
+                    for (let i = selected.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [selected[i], selected[j]] = [selected[j], selected[i]];
+                    }
+                    
+                    selected.forEach(c => CURRENT_CHALLENGES.push({ ...c, score: null }));
+                    currentStartPoseType = 'T_POSE';
+                    currentChallengeNameElement.textContent = `▶️ 連続チャレンジ 準備中...`;
+                }
+                
+                // チャレンジリストが確定したら、準備フェーズを開始
+                if (CURRENT_CHALLENGES.length > 0) {
+                    currentChallengeIndex = 0;
+                    startPreparationPhase();
+                }
             }
-            
-             if (currentChallengeNameElement) {
-                 currentChallengeNameElement.textContent = `✅ ${CURRENT_CHALLENGES[currentChallengeIndex].name}`;
-             }
-
-            setTimeout(() => {
-                resetChallenge(true);
-            }, 1000); 
+        }
+        
+        // ★ 変更点C: リアルタイムポーズスナップショットを更新
+        if (isChallengeStarted && !isPoseFixed) {
+            currentLandmarksSnapshot = JSON.parse(JSON.stringify(results.poseLandmarks));
         }
 
-        // 3. 描画とスコア表示の更新
+        // --- 2. 描画とスコア表示の更新 ---
         const drawingLandmarksToUse = finalPoseLandmarks || results.poseLandmarks;
 
-        const lineColor = finalPoseLandmarks ? '#FFD700' : '#00FF00'; // 固定ポーズは黄色
-        const dotColor = finalPoseLandmarks ? '#FFA500' : '#FF0000'; // 固定ポーズはオレンジ
+        const lineColor = isPoseFixed ? '#FFD700' : '#00FF00'; // isPoseFixed を使用
+        const dotColor = isPoseFixed ? '#FFA500' : '#FF0000'; // isPoseFixed を使用
         
         drawConnectors(canvasCtx, drawingLandmarksToUse, window.POSE_CONNECTIONS,
                        { color: lineColor, lineWidth: 4 }); 
         drawLandmarks(canvasCtx, drawingLandmarksToUse,
                       { color: dotColor, lineWidth: 2, radius: 4 });
 
-        if (!finalPoseLandmarks && isChallengeStarted) {
-             const score = calculateMatchScore(results.poseLandmarks);
+        if (!isPoseFixed && isChallengeStarted && currentLandmarksSnapshot) { // isPoseFixed とスナップショットをチェック
+             const score = calculateMatchScore(currentLandmarksSnapshot);
              matchScoreElement.textContent = score.toFixed(1) + ' %';
              
              if (score > 80) {
@@ -600,6 +610,13 @@ function onResults(results) {
                 matchScoreElement.style.color = '#FFA500';
              } else {
                 matchScoreElement.style.color = '#F44336';
+             }
+        } else if (!isChallengeStarted && !isWaitingForStartPose) {
+             // チャレンジが終了して待機状態に戻るまでの描画ロジック
+             if (finalPoseLandmarks) {
+                 // 確定したポーズを表示し続ける
+                 drawConnectors(canvasCtx, finalPoseLandmarks, window.POSE_CONNECTIONS, { color: '#FFD700', lineWidth: 4 });
+                 drawLandmarks(canvasCtx, finalPoseLandmarks, { color: '#FFA500', lineWidth: 2, radius: 4 });
              }
         }
     }

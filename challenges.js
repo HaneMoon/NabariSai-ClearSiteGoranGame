@@ -16,35 +16,42 @@ const LANDMARK_INDICES = {
     RIGHT_ANKLE: 28, // 右足首
 };
 
-// **全チャレンジのリスト**
-export const ALL_CHALLENGES = [
+// **垂直ポーズで開始するチャレンジ（チュートリアル）**
+export const VERTICAL_CHALLENGES = [
+    {
+        id: 'LIFT_LEFT',
+        name: "左手を上げる (チュートリアル)",
+        message: "【垂直スタート】両手を垂直に上げてポーズを維持してください。",
+        targetType: 'ARM', 
+        evalJoints: ['L_SHOULDER', 'L_ELBOW'],
+        requiredStartPose: 'VERTICAL', 
+    },
+];
+
+// **T字ポーズで開始するチャレンジ（ランダム対象）**
+export const T_POSE_CHALLENGES = [
     {
         id: 'L_SHAPE_ARMS', // L字ポーズ
         name: "両腕L字ポーズ",
-        message: "【チャレンジ0】両腕を水平に広げ、肘を直角に曲げたL字ポーズを維持してください。",
+        message: "【T字スタート】両腕を水平に広げ、肘を直角に曲げたL字ポーズを維持してください。",
         targetType: 'L_SHAPE_ARMS', 
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'],
-        requiredStartPose: 'T_POSE', // ★ 変更点1: T字ポーズで開始
-    },
-    {
-        id: 'LIFT_LEFT',
-        name: "左手を上げる",
-        message: "【チャレンジ1】左手を垂直に上げてポーズを維持してください。",
-        targetType: 'ARM', 
-        evalJoints: ['L_SHOULDER', 'L_ELBOW'],
-        requiredStartPose: 'VERTICAL', // ★ 変更点1: 垂直ポーズで開始
+        requiredStartPose: 'T_POSE', 
     },
     {
         id: 'LIFT_RIGHT',
         name: "右手を上げる",
-        message: "【チャレンジ2】今度は右手を垂直に上げてポーズを維持してください。",
+        message: "【T字スタート】右手を垂直に上げてポーズを維持してください。",
         targetType: 'ARM',
         evalJoints: ['R_SHOULDER', 'R_ELBOW'],
-        requiredStartPose: 'T_POSE', // ★ 変更点1: T字ポーズで開始
+        requiredStartPose: 'T_POSE', 
     },
 ];
 
-// **実行するチャレンジ配列 (script.jsで初期化される)**
+// **全チャレンジのリスト** (ランダム選択は行わないため、結合して定数として定義)
+export const ALL_CHALLENGES = [...VERTICAL_CHALLENGES, ...T_POSE_CHALLENGES];
+
+// **実行するチャレンジ配列 (動的に追加される)**
 export let CURRENT_CHALLENGES = [];
 
 // その他の共通定数
