@@ -16,53 +16,61 @@ const LANDMARK_INDICES = {
     RIGHT_ANKLE: 28, // 右足首
 };
 
-// **エクスポートするチャレンジ配列**
-export const CHALLENGES = [
+// **全チャレンジのリスト**
+export const ALL_CHALLENGES = [
     {
-        name: "左手を上げる",
-        message: "【チャレンジ1/3】左手を垂直に上げてポーズを維持してください。",
-        targetType: 'ARM', // 評価タイプ: 腕
-        evalJoints: ['L_SHOULDER', 'L_ELBOW'], 
-        score: null,
-        shoulder: LANDMARK_INDICES.LEFT_SHOULDER, // 互換性維持のため再定義
-        elbow: LANDMARK_INDICES.LEFT_ELBOW,
-        wrist: LANDMARK_INDICES.LEFT_WRIST,
-        hip: LANDMARK_INDICES.LEFT_HIP,
+        id: 'L_SHAPE_ARMS', // L字ポーズ
+        name: "両腕L字ポーズ",
+        message: "【チャレンジ0】両腕を水平に広げ、肘を直角に曲げたL字ポーズを維持してください。",
+        targetType: 'L_SHAPE_ARMS', 
+        evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
     },
     {
+        id: 'LIFT_LEFT',
+        name: "左手を上げる",
+        message: "【チャレンジ1】左手を垂直に上げてポーズを維持してください。",
+        targetType: 'ARM', 
+        evalJoints: ['L_SHOULDER', 'L_ELBOW'], 
+    },
+    {
+        id: 'LIFT_RIGHT',
         name: "右手を上げる",
-        message: "【チャレンジ2/3】今度は右手を垂直に上げてポーズを維持してください。",
+        message: "【チャレンジ2】今度は右手を垂直に上げてポーズを維持してください。",
         targetType: 'ARM',
         evalJoints: ['R_SHOULDER', 'R_ELBOW'],
-        score: null,
-        shoulder: LANDMARK_INDICES.RIGHT_SHOULDER,
-        elbow: LANDMARK_INDICES.RIGHT_ELBOW,
-        wrist: LANDMARK_INDICES.RIGHT_WRIST,
-        hip: LANDMARK_INDICES.RIGHT_HIP,
     },
-    {
-        name: "片足立ち (右足軸)",
-        message: "【チャレンジ3/3】右足で立ち、左足を曲げて両手を挙げてください。",
-        targetType: 'LEG_BALANCE', // 評価タイプ: 下半身の安定性
-        evalJoints: ['R_KNEE', 'HIP_TILT'], // 評価する関節群: 軸足の膝と体幹の傾き
-        score: null,
-        // ARMチャレンジと互換性のない関節は null または使用しない
-    }
+    // 下半身のチャレンジ（LEG_BALANCE, SQUAT, WARRIOR_II）を削除
 ];
+
+// **実行するチャレンジ配列 (script.jsで初期化される)**
+export let CURRENT_CHALLENGES = [];
 
 // その他の共通定数
 export const TARGET_ANGLES = {
-    ELBOW: 170, 
-    SHOULDER: 170, 
-    KNEE_STRAIGHT: 170, // 軸足の膝の伸び目標
+    ELBOW: 165, 
+    SHOULDER: 165, 
+    // L字ポーズの目標角度
+    L_SHAPE_SHOULDER: 90, 
+    L_SHAPE_ELBOW: 90, 
+    
+    // T字ポーズ
+    T_POSE_SHOULDER: 90, 
+    T_POSE_ELBOW: 170, 
+    KNEE_STRAIGHT: 165, 
 };
 
 export const TOLERANCE = {
-    ELBOW: 10,  
-    SHOULDER: 15, 
-    KNEE: 10, // 膝の許容誤差
-    TILT: 5, // 体幹の傾きの許容誤差 (5度まで許容)
-    START_TOLERANCE: 20,
+    ELBOW: 30,  
+    SHOULDER: 40, 
+    KNEE: 20, 
+    TILT: 15, 
+    
+    // L字ポーズの許容誤差
+    L_SHAPE_TOLERANCE: 30, 
+    
+    // スタートポーズの許容誤差
+    START_TOLERANCE_VERTICAL: 30, 
+    START_TOLERANCE_T_POSE: 20, 
 };
 
 export const LANDMARKS = LANDMARK_INDICES;
