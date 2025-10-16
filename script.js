@@ -647,10 +647,14 @@ function startChallengeTimer() {
     }
 
     let intervalCount = 0; // 新しいカウンターを導入
-
+    
+    // ポーズ指示部分のみを抽出 (例: 「【T字スタート】右腕で剣を構えるポーズを取り、左腕は自然に下げてください。」から「右腕で剣を構えるポーズを取り、左腕は自然に下げてください。」を抽出)
+    const poseInstruction = currentChallenge.message.replace(/【.+】/, '').trim();
+    
     // 最初の表示を「3」にするため、最初に表示をセット
     timerDisplayElement.textContent = COUNTDOWN_SECONDS; 
-    guideMessageElement.textContent = `ポーズを取る準備！残り ${COUNTDOWN_SECONDS} 秒！`;
+    // 【修正】カウントダウン中でもポーズ指示を表示
+    guideMessageElement.textContent = `${poseInstruction} (残り ${COUNTDOWN_SECONDS} 秒)`;
 
     challengeTimerId = setInterval(() => {
         intervalCount++;
@@ -664,18 +668,21 @@ function startChallengeTimer() {
         if (elapsed < COUNTDOWN_SECONDS) {
             const remaining = COUNTDOWN_SECONDS - elapsed;
             timerDisplayElement.textContent = remaining;
-            guideMessageElement.textContent = `ポーズを取る準備！残り ${remaining} 秒！`;
+            // 【修正】カウントダウン中でもポーズ指示を表示
+            guideMessageElement.textContent = `${poseInstruction} (残り ${remaining} 秒)`;
         } 
         // GO! フェーズ（計測開始）
         else if (elapsed === COUNTDOWN_SECONDS) {
              timerDisplayElement.textContent = 'GO!';
-             guideMessageElement.textContent = `ポーズを維持してください！測定中... 1 / ${HOLD_SECONDS} 秒`;
+             // 【修正】ホールド中もポーズ指示を表示
+             guideMessageElement.textContent = `${poseInstruction} (測定中... 1 / ${HOLD_SECONDS} 秒)`;
         }
         // ホールドフェーズ
         else if (elapsed < TOTAL_DELAY_SECONDS) {
             const holdTime = elapsed - COUNTDOWN_SECONDS;
             timerDisplayElement.textContent = 'GO!'; // GO! を維持
-            guideMessageElement.textContent = `ポーズを維持してください！測定中... ${holdTime + 1} / ${HOLD_SECONDS} 秒`;
+            // 【修正】ホールド中もポーズ指示を表示
+            guideMessageElement.textContent = `${poseInstruction} (測定中... ${holdTime + 1} / ${HOLD_SECONDS} 秒)`;
         } 
         // 終了
         else {
