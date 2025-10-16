@@ -16,7 +16,7 @@ const LANDMARK_INDICES = {
     RIGHT_ANKLE: 28, // 右足首
 };
 
-// **垂直ポーズで開始するチャレンジ（チュートリアル）** (変更無し)
+// **垂直ポーズで開始するチャレンジ（チュートリアル）**
 export const VERTICAL_CHALLENGES = [
     {
         id: 'LIFT_LEFT',
@@ -25,26 +25,29 @@ export const VERTICAL_CHALLENGES = [
         targetType: 'ARM', 
         evalJoints: ['L_SHOULDER', 'L_ELBOW'],
         requiredStartPose: 'VERTICAL', 
+        imageSrc: './images/kawaii_pose_overlay.png', // ★ 修正点1: 画像パスを追加
     },
 ];
 
 // **T字ポーズで開始するチャレンジ（ランダム対象）**
 export const T_POSE_CHALLENGES = [
     {
-        id: 'L_SHAPE_ARMS', // 両腕L字ポーズ (変更無し)
+        id: 'L_SHAPE_ARMS', // 両腕L字ポーズ
         name: "両腕L字ポーズ",
         message: "【T字スタート】両腕を水平に広げ、肘を直角に曲げたL字ポーズを維持してください。",
         targetType: 'L_SHAPE_ARMS', 
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'],
         requiredStartPose: 'T_POSE', 
+        imageSrc: './images/kawaii_pose_overlay.png', // ★ 修正点2: 画像パスを追加
     },
     {
-        id: 'LIFT_RIGHT', // 右手を上げる (変更無し)
+        id: 'LIFT_RIGHT', // 右手を上げる
         name: "右手を上げる",
         message: "【T字スタート】右手を垂直に上げてポーズを維持してください。",
         targetType: 'ARM',
         evalJoints: ['R_SHOULDER', 'R_ELBOW'],
         requiredStartPose: 'T_POSE', 
+        imageSrc: './images/kawaii_pose_overlay.png', // ★ 修正点3: 画像パスを追加
     },
     // 片腕90度屈曲ポーズ (左)
     {
@@ -54,6 +57,7 @@ export const T_POSE_CHALLENGES = [
         targetType: 'SINGLE_L_SHAPE', 
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER'], 
         requiredStartPose: 'T_POSE', 
+        imageSrc: './images/kawaii_pose_overlay.png', // ★ 修正点4: 画像パスを追加
     },
 ];
 
@@ -63,7 +67,7 @@ export const ALL_CHALLENGES = [...VERTICAL_CHALLENGES, ...T_POSE_CHALLENGES];
 // **実行するチャレンジ配列 (動的に追加される)** (変更無し)
 export let CURRENT_CHALLENGES = [];
 
-// その他の共通定数
+// その他の共通定数 (変更無し)
 export const TARGET_ANGLES = {
     ELBOW: 165, 
     SHOULDER: 165, 
@@ -98,7 +102,7 @@ export const TOLERANCE = {
     
     // スタートポーズの許容誤差
     START_TOLERANCE_VERTICAL: 30, 
-    // ★ 変更点3: T字ポーズの許容誤差を30に緩和
+    // T字ポーズの許容誤差
     START_TOLERANCE_T_POSE: 30, 
 };
 

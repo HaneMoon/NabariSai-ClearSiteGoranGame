@@ -10,7 +10,7 @@ import {
 } from './challenges.js';
 
 // -------------------------------------------------------------------------
-// グローバル定数と初期化 (変更無し)
+// グローバル定数と初期化
 // -------------------------------------------------------------------------
 
 const videoElement = document.getElementById('video');
@@ -21,11 +21,13 @@ const guideMessageElement = document.getElementById('guide-message');
 const timerDisplayElement = document.getElementById('timer-display');
 const currentChallengeNameElement = document.getElementById('current-challenge-name');
 const debugStartButton = document.getElementById('debug-start-button');
+// ★ 修正点1: グローバル定数としてoverlayImageElementを取得
+const overlayImageElement = document.getElementById('challenge-pose-overlay'); 
 
 canvasElement.width = 640;
 canvasElement.height = 480;
 
-// 状態管理のための変数
+// 状態管理のための変数 (以下変更なし)
 let currentLandmarksSnapshot = null; 
 let currentChallengeIndex = 0;
 let isPoseFixed = false; 
@@ -42,11 +44,11 @@ const TOTAL_DELAY_SECONDS = COUNTDOWN_SECONDS + HOLD_SECONDS;
 let challengeTimerId = null;
 
 // -------------------------------------------------------------------------
-// チャレンジの初期化とランダム選択ロジック (変更無し)
+// チャレンジの初期化とロジック
 // -------------------------------------------------------------------------
 
 /**
- * チャレンジリストをクリアし、初期待機状態に戻す (変更無し)
+ * チャレンジリストをクリアし、初期待機状態に戻す
  */
 function resetWaitingState() {
     currentChallengeIndex = 0;
@@ -66,11 +68,17 @@ function resetWaitingState() {
     
     currentChallengeNameElement.textContent = '次のポーズを待機中...';
     guideMessageElement.textContent = 'チャレンジを開始するには、両手を垂直に上げるか、T字ポーズを維持してください。';
+    
+    // 画像オーバーレイを非表示
+    if (overlayImageElement) {
+        overlayImageElement.style.display = 'none';
+        overlayImageElement.src = '';
+    }
 }
 
 
 // =========================================================================
-// 🎯 ヘルパー関数: ポーズ検出とスコア計算 (変更無し)
+// 🎯 ヘルパー関数: ポーズ検出とスコア計算
 // =========================================================================
 
 /**
@@ -320,7 +328,7 @@ function calculateMatchScore(currentLandmarks) {
 // =========================================================================
 
 /**
- * チャレンジをリセットし、次のステージへ進む (変更なし)
+ * チャレンジをリセットし、次のステージへ進む
  */
 function resetChallenge(nextStage = false) {
     isPoseFixed = false; 
@@ -348,6 +356,14 @@ function resetChallenge(nextStage = false) {
             currentChallengeNameElement.textContent = `▶️ ${nextChallenge.name}`;
         }
         
+        // ★ 修正点7-1: チャレンジ画像が定義されていれば表示
+        if (overlayImageElement && nextChallenge.imageSrc) {
+            overlayImageElement.src = nextChallenge.imageSrc;
+            overlayImageElement.style.display = 'block';
+        } else if (overlayImageElement) {
+             overlayImageElement.style.display = 'none';
+        }
+        
         setTimeout(() => {
             startPreparationPhase(); 
         }, 50); 
@@ -356,11 +372,16 @@ function resetChallenge(nextStage = false) {
     } else {
         // 全チャレンジ完了 -> 平均スコアを表示
         showChallengeResults();
+        
+        // ★ 修正点7-2: 最終結果表示時にオーバーレイを非表示に
+        if (overlayImageElement) {
+            overlayImageElement.style.display = 'none';
+        }
     }
 }
 
 /**
- * 最終結果を表示する (変更なし)
+ * 最終結果を表示する
  */
 function showChallengeResults() {
     let totalScore = 0;
@@ -410,7 +431,7 @@ function showChallengeResults() {
 }
 
 /**
- * 準備フェーズを開始する (変更なし)
+ * 準備フェーズを開始する
  */
 function startPreparationPhase() {
     if (isChallengeStarted || isInPreparationPhase) return;
@@ -426,7 +447,7 @@ function startPreparationPhase() {
     }, PREP_DELAY_SECONDS * 1000);
 }
 
-// チャレンジ強制開始関数 (変更なし)
+// チャレンジ強制開始関数
 function forceStartChallenge() {
     if (isChallengeStarted || isInPreparationPhase) {
         console.warn("チャレンジは既に進行中です。");
@@ -454,7 +475,6 @@ function forceStartChallenge() {
 
 /**
  * カウントダウンタイマーを開始する 
- * ★ 修正点A: intervalCountを使用して、表示ロジックを修正
  */
 function startChallengeTimer() {
     if (isChallengeStarted) return;
@@ -474,7 +494,7 @@ function startChallengeTimer() {
 
     let intervalCount = 0; // ★ 新しいカウンターを導入
 
-    // 最初の表示を「3」にするため、100ms後に開始する処理を設定
+    // 最初の表示を「3」にするため、最初に表示をセット
     timerDisplayElement.textContent = COUNTDOWN_SECONDS; 
     guideMessageElement.textContent = `ポーズを取る準備！残り ${COUNTDOWN_SECONDS} 秒！`;
 
@@ -487,12 +507,14 @@ function startChallengeTimer() {
         }
         
         // カウントダウンフェーズ
+        // intervalCount=1 で '2', intervalCount=2 で '1' と表示される
         if (elapsed < COUNTDOWN_SECONDS) {
             const remaining = COUNTDOWN_SECONDS - elapsed;
             timerDisplayElement.textContent = remaining;
             guideMessageElement.textContent = `ポーズを取る準備！残り ${remaining} 秒！`;
         } 
         // GO! フェーズ（計測開始）
+        // intervalCount=3 で GO! と表示される (COUNTDOWN_SECONDS=3)
         else if (elapsed === COUNTDOWN_SECONDS) {
              timerDisplayElement.textContent = 'GO!';
              guideMessageElement.textContent = `ポーズを維持してください！測定中... 1 / ${HOLD_SECONDS} 秒`;
@@ -553,7 +575,7 @@ function startChallengeTimer() {
 
 
 // -------------------------------------------------------------------------
-// MediaPipeとカメラの初期化 (変更なし)
+// MediaPipeとカメラの初期化
 // -------------------------------------------------------------------------
 const pose = new Pose({
     locateFile: (file) => {
@@ -569,9 +591,10 @@ pose.onResults(onResults);
 const { Camera } = window;
 const camera = new Camera(videoElement, {
     onFrame: async () => {
-        if (isPoseFixed && finalPoseLandmarks) {
-            return;
-        }
+        // ★ 修正点1: 早期リターンを削除し、リアルタイム処理を保証
+        // if (isPoseFixed && finalPoseLandmarks) {
+        //     return;
+        // }
         
         await pose.send({ image: videoElement });
     },
@@ -595,7 +618,7 @@ camera.start().then(() => {
 
 
 /**
- * MediaPipeからの姿勢検出結果を受け取るコールバック (変更なし)
+ * MediaPipeからの姿勢検出結果を受け取るコールバック
  */
 function onResults(results) {
     canvasCtx.save();
