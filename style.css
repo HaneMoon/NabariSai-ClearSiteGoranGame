@@ -28,9 +28,8 @@ h1 {
 }
 
 #video-container {
-    position: relative; /* ★ 修正点2: 子要素の絶対配置の基準にする */
+    position: relative; 
     flex-grow: 1; 
-    /* 以前の幅指定 (75%) は flex-grow: 1 に任せる */
     height: 100%; 
     
     border: none;
@@ -39,7 +38,6 @@ h1 {
     border-radius: 0;
     overflow: hidden; 
     
-    /* Flexboxは絶対配置と相性が悪いため、最低限に調整 */
     display: flex;
     justify-content: center; /* 水平中央寄せ */
     align-items: center; /* 垂直中央寄せ */
@@ -49,9 +47,9 @@ h1 {
     display: none; 
 }
 
-/* ★ 修正点3: キャンバスと画像の両方を重ね合わせる設定に変更 */
+/* キャンバスと画像の両方に共通する重ね合わせ設定 */
 #canvas, #challenge-pose-overlay {
-    position: absolute; /* 重ね合わせのため絶対配置に戻す */
+    position: absolute; 
     top: 0;
     left: 0;
     width: 100%; 
@@ -59,16 +57,19 @@ h1 {
     
     /* アスペクト比の維持と「はみ出し」を防ぐための重要なプロパティ */
     object-fit: contain; 
-    aspect-ratio: 4 / 3; /* 標準的なウェブカメラのアスペクト比に固定 */
-    
-    /* 鏡のように左右反転してユーザーが見やすいようにする */
+    aspect-ratio: 4 / 3; 
+}
+
+/* ★ 修正点1: キャンバスはユーザーに見やすくするため左右反転を維持 */
+#canvas {
     transform: scaleX(-1); 
 }
 
-/* ★ 修正点4: 画像要素に重ね合わせと透過を設定 */
+/* ★ 修正点2: オーバーレイ画像は正しい向きで表示するため、反転を削除 */
 #challenge-pose-overlay {
     z-index: 10; /* キャンバスの上に表示 */
     opacity: 0.7; /* 透過させて、ユーザーの姿が見えるようにする */
+    /* 以前あった transform: scaleX(-1); を削除 */
 }
 
 

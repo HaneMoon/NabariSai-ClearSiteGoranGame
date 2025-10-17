@@ -87,7 +87,7 @@ export const T_POSE_CHALLENGES = [
         targetType: 'ASYM_ARCHERY_ARMS', // 新しい評価タイプ
         evalJoints: ['L_SHOULULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
         requiredStartPose: 'T_POSE', 
-        imageSrc: './images/archery_pose_overlay.png', // 新しい画像 (仮)
+        imageSrc: './images/pose/Bow.png', // 新しい画像 (仮)
     },
     // 敬礼ポーズ
     {
@@ -137,7 +137,7 @@ export const T_POSE_CHALLENGES = [
         targetType: 'ASYM_ARMS_UP_DOWN', // 新しい評価タイプ
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
         requiredStartPose: 'T_POSE', 
-        imageSrc: './images/left_arm_up_right_arm_down_overlay.png', // 新しい画像 (仮)
+        imageSrc: './images/pose/Kpose.png', // 新しい画像 (仮)
     },
 ];
 
