@@ -535,11 +535,12 @@ function calculateMatchScore(currentLandmarks) {
     // 11. ASYM_OATH_ARMS (忠誠を誓う人ポーズ) の評価ロジック
     else if (challenge.targetType === 'ASYM_OATH_ARMS') {
         const T = target;
-        const OATH_TOL = tolerance.OATH_TOLERANCE; // 40度を使用
-        const OATH_VISIBILITY_THRESHOLD = VISIBILITY_THRESHOLD; // 0.5 を使用
-        const H_R = L.RIGHT_HIP, H_L = L.LEFT_HIP; // 腰のランドマーク
+        // ★ 許容誤差を 60度 に緩和 (challenges.jsのOATH_TOLERANCEに依存)
+        const OATH_TOL = tolerance.OATH_TOLERANCE; 
+        const OATH_VISIBILITY_THRESHOLD = VISIBILITY_THRESHOLD; 
+        const H_R = L.RIGHT_HIP, H_L = L.LEFT_HIP; 
 
-        // 必須ランドマークの可視性チェック (左右の主要ランドマークをチェック)
+        // 必須ランドマークの可視性チェック (変更なし)
         const isVisible = currentLandmarks[L.RIGHT_SHOULDER]?.visibility > OATH_VISIBILITY_THRESHOLD &&
                           currentLandmarks[L.LEFT_SHOULDER]?.visibility > OATH_VISIBILITY_THRESHOLD &&
                           currentLandmarks[L.RIGHT_WRIST]?.visibility > OATH_VISIBILITY_THRESHOLD &&
@@ -549,39 +550,42 @@ function calculateMatchScore(currentLandmarks) {
             return 0;
         }
 
-        // --- 1. 右腕 (突き出し側) の角度評価 (R_SHOULDER: 90, R_ELBOW: 170) ---
+        // --- 1. 左腕 (突き出し側) の角度評価 (目標は OATH_R_SHOULDER: 90, OATH_R_ELBOW: 170) ---
         
-        // R_SHOULDER: 水平 (90度)
-        const rightShoulderAngle = calculateAngle(currentLandmarks[H_R], currentLandmarks[L.RIGHT_SHOULDER], currentLandmarks[L.RIGHT_ELBOW]);
-        totalScore += calculateScore(rightShoulderAngle, T.OATH_R_SHOULDER, OATH_TOL);
-        jointCount++;
-        
-        // R_ELBOW: ほぼまっすぐ (170度)
-        const rightElbowAngle = calculateAngle(currentLandmarks[L.RIGHT_SHOULDER], currentLandmarks[L.RIGHT_ELBOW], currentLandmarks[L.RIGHT_WRIST]);
-        totalScore += calculateScore(rightElbowAngle, T.OATH_R_ELBOW, OATH_TOL);
-        jointCount++;
-
-        // --- 2. 左腕 (腰に添える側) の角度評価 (L_SHOULDER: 120, L_ELBOW: 90) ---
-        
-        // L_SHOULDER: 水平より少し下 (120度)
+        // L_SHOULDER: 水平 (90度目標)
         const leftShoulderAngle = calculateAngle(currentLandmarks[H_L], currentLandmarks[L.LEFT_SHOULDER], currentLandmarks[L.LEFT_ELBOW]);
-        totalScore += calculateScore(leftShoulderAngle, T.OATH_L_SHOULDER, OATH_TOL);
+        // ★ 目標を右腕の目標角度T.OATH_R_SHOULDERに設定
+        totalScore += calculateScore(leftShoulderAngle, T.OATH_R_SHOULDER, OATH_TOL); 
         jointCount++;
         
-        // L_ELBOW: 直角 (90度)
+        // L_ELBOW: ほぼまっすぐ (170度目標)
         const leftElbowAngle = calculateAngle(currentLandmarks[L.LEFT_SHOULDER], currentLandmarks[L.LEFT_ELBOW], currentLandmarks[L.LEFT_WRIST]);
-        totalScore += calculateScore(leftElbowAngle, T.OATH_L_ELBOW, OATH_TOL);
+        // ★ 目標を右腕の目標角度T.OATH_R_ELBOWに設定
+        totalScore += calculateScore(leftElbowAngle, T.OATH_R_ELBOW, OATH_TOL); 
         jointCount++;
 
-        // --- 3. 左腕の空間的制約評価 (手首が腰の近くにあるか) ---
+        // --- 2. 右腕 (腰に添える側) の角度評価 (目標は OATH_L_SHOULDER: 120, OATH_L_ELBOW: 90) ---
         
-        // 左手首 (L.LEFT_WRIST) が左腰 (L.LEFT_HIP) に近いか
-        const wristToHipDist = calculateDistance(currentLandmarks[L.LEFT_WRIST], currentLandmarks[H_L]).totalDistance;
-        // 腕の長さ (肩から肘) を正規化の基準とする
-        const armLength = calculateDistance(currentLandmarks[L.LEFT_SHOULDER], currentLandmarks[L.LEFT_ELBOW]).totalDistance;
+        // R_SHOULDER: 水平より少し下 (120度目標)
+        const rightShoulderAngle = calculateAngle(currentLandmarks[H_R], currentLandmarks[L.RIGHT_SHOULDER], currentLandmarks[L.RIGHT_ELBOW]);
+        // ★ 目標を左腕の目標角度T.OATH_L_SHOULDERに設定
+        totalScore += calculateScore(rightShoulderAngle, T.OATH_L_SHOULDER, OATH_TOL); 
+        jointCount++;
+        
+        // R_ELBOW: 直角 (90度目標)
+        const rightElbowAngle = calculateAngle(currentLandmarks[L.RIGHT_SHOULDER], currentLandmarks[L.RIGHT_ELBOW], currentLandmarks[L.RIGHT_WRIST]);
+        // ★ 目標を左腕の目標角度T.OATH_L_ELBOWに設定
+        totalScore += calculateScore(rightElbowAngle, T.OATH_L_ELBOW, OATH_TOL); 
+        jointCount++;
 
-        // 許容される距離 (腕の長さの約 20% まで) 
-        const maxAllowedDistance = armLength * 0.20; 
+        // --- 3. 右腕の空間的制約評価 (右手首が右腰の近くにあるか) ---
+        
+        // 右手首 (L.RIGHT_WRIST) が右腰 (L.RIGHT_HIP) に近いか評価
+        const wristToHipDist = calculateDistance(currentLandmarks[L.RIGHT_WRIST], currentLandmarks[H_R]).totalDistance;
+        const armLength = calculateDistance(currentLandmarks[L.RIGHT_SHOULDER], currentLandmarks[L.RIGHT_ELBOW]).totalDistance;
+
+        // ★ 修正点: 許容される距離を腕の長さの 70% へ大幅に緩和
+        const maxAllowedDistance = armLength * 0.70; 
 
         // 距離が近ければ近いほどスコアが高い
         const distanceScore = 100 * (1 - (wristToHipDist / maxAllowedDistance));
