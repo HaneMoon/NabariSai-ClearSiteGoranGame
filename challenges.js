@@ -33,7 +33,7 @@ export const VERTICAL_CHALLENGES = [
         targetType: 'ARM', 
         evalJoints: ['L_SHOULDER', 'L_ELBOW'],
         requiredStartPose: 'VERTICAL', 
-        imageSrc: './images/kawaii_pose_overlay.png', 
+        imageSrc: './images/LhandUP_pose_overlay.png', 
     },
 ];
 
@@ -46,7 +46,7 @@ export const T_POSE_CHALLENGES = [
         targetType: 'L_SHAPE_ARMS', 
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'],
         requiredStartPose: 'T_POSE', 
-        imageSrc: './images/kawaii_pose_overlay.png', 
+        imageSrc: './images/2ArmsL_pose_overlay.png', 
     },
     // 剣を構えるポーズ (右腕のみ判定に変更)
     {
@@ -67,7 +67,7 @@ export const T_POSE_CHALLENGES = [
         targetType: 'SWORD_GRIP', // 新しい評価タイプ
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], // 両肩と両肘
         requiredStartPose: 'T_POSE', 
-        imageSrc: './images/sword_grip_overlay.png', // 新しい画像 (仮)
+        imageSrc: './images/kawaii_pose_overlay.png', // 新しい画像 (仮)
     },
     // 頭上での屈曲ポーズ
     {
@@ -77,7 +77,7 @@ export const T_POSE_CHALLENGES = [
         targetType: 'SIDE_BEND_ARMS', // 新しい評価タイプ
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
         requiredStartPose: 'T_POSE', 
-        imageSrc: './images/high_side_bend_overlay.png', // 新しい画像 (仮)
+        imageSrc: './images/kawaii_pose_overlay.png', // 新しい画像 (仮)
     },
     // ARCHERY_POSE
     {
@@ -97,7 +97,7 @@ export const T_POSE_CHALLENGES = [
         targetType: 'ASYM_SALUTE_ARMS', // 新しい評価タイプ
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
         requiredStartPose: 'T_POSE', 
-        imageSrc: './images/salute_pose_overlay.png', // 新しい画像 (仮)
+        imageSrc: './images/keirei_pose_overlay.png', 
     },
 ];
 
