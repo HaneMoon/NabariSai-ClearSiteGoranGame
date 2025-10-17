@@ -33,7 +33,7 @@ export const VERTICAL_CHALLENGES = [
         targetType: 'ARM', 
         evalJoints: ['L_SHOULDER', 'L_ELBOW'],
         requiredStartPose: 'VERTICAL', 
-        imageSrc: './images/LhandUP_pose_overlay.png', 
+        imageSrc: './images/kawaii_pose_overlay.png', 
     },
 ];
 
@@ -46,7 +46,7 @@ export const T_POSE_CHALLENGES = [
         targetType: 'L_SHAPE_ARMS', 
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'],
         requiredStartPose: 'T_POSE', 
-        imageSrc: './images/2ArmsL_pose_overlay.png', 
+        imageSrc: './images/kawaii_pose_overlay.png', 
     },
     // 剣を構えるポーズ (右腕のみ判定に変更)
     {
@@ -67,7 +67,7 @@ export const T_POSE_CHALLENGES = [
         targetType: 'SWORD_GRIP', // 新しい評価タイプ
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], // 両肩と両肘
         requiredStartPose: 'T_POSE', 
-        imageSrc: './images/kawaii_pose_overlay.png', // 新しい画像 (仮)
+        imageSrc: './images/sword_grip_overlay.png', // 新しい画像 (仮)
     },
     // 頭上での屈曲ポーズ
     {
@@ -77,7 +77,7 @@ export const T_POSE_CHALLENGES = [
         targetType: 'SIDE_BEND_ARMS', // 新しい評価タイプ
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
         requiredStartPose: 'T_POSE', 
-        imageSrc: './images/kawaii_pose_overlay.png', // 新しい画像 (仮)
+        imageSrc: './images/high_side_bend_overlay.png', // 新しい画像 (仮)
     },
     // ARCHERY_POSE
     {
@@ -89,7 +89,7 @@ export const T_POSE_CHALLENGES = [
         requiredStartPose: 'T_POSE', 
         imageSrc: './images/archery_pose_overlay.png', // 新しい画像 (仮)
     },
-    // ★ 追加: SALUTE_POSE
+    // SALUTE_POSE
     {
         id: 'SALUTE_POSE',
         name: "敬礼ポーズ",
@@ -97,7 +97,17 @@ export const T_POSE_CHALLENGES = [
         targetType: 'ASYM_SALUTE_ARMS', // 新しい評価タイプ
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
         requiredStartPose: 'T_POSE', 
-        imageSrc: './images/keirei_pose_overlay.png', 
+        imageSrc: './images/salute_pose_overlay.png', // 新しい画像 (仮)
+    },
+    // 非対称の片腕上げポーズ
+    {
+        id: 'LEFT_ARM_UP_RIGHT_ARM_DOWN',
+        name: "非対称の片腕上げポーズ",
+        message: "【T字スタート】左腕を垂直に上げ、右腕を斜め下に伸ばしてポーズを維持してください。",
+        targetType: 'ASYM_ARMS_UP_DOWN', // 新しい評価タイプ
+        evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
+        requiredStartPose: 'T_POSE', 
+        imageSrc: './images/left_arm_up_right_arm_down_overlay.png', // 新しい画像 (仮)
     },
 ];
 
@@ -142,11 +152,17 @@ export const TARGET_ANGLES = {
     ARCHERY_L_SHOULDER: 90,  
     ARCHERY_L_ELBOW: 170,    
     
-    // ★ 追加: SALUTE_POSE の目標角度
+    // SALUTE_POSE の目標角度
     SALUTE_R_SHOULDER: 100, // 敬礼腕: 水平より少し上
     SALUTE_R_ELBOW: 50,     // 敬礼腕: 鋭角に曲げる
     SALUTE_L_SHOULDER: 175, // 下げ腕: ほぼまっすぐ下
     SALUTE_L_ELBOW: 170,    // 下げ腕: ほぼまっすぐ
+    
+    // ASYM_ARMS_UP_DOWN の目標角度
+    UP_DOWN_L_SHOULDER: 170, // 左腕: 垂直
+    UP_DOWN_L_ELBOW: 170,    // 左腕: まっすぐ
+    UP_DOWN_R_SHOULDER: 140, // 右腕: 斜め下
+    UP_DOWN_R_ELBOW: 170,    // 右腕: まっすぐ
 };
 
 export const TOLERANCE = {
@@ -164,6 +180,7 @@ export const TOLERANCE = {
     DASH_TOLERANCE: 30, 
 
     // SWORD_POSE の許容誤差
+   // SWORD_POSE の許容誤差
     SWORD_TOLERANCE: 30, 
     
     // SWORD_GRIP_POSE の許容誤差
@@ -175,8 +192,11 @@ export const TOLERANCE = {
     // ARCHERY_POSE の許容誤差
     ARCHERY_TOLERANCE: 60,
     
-    // ★ 変更: SALUTE_POSE の許容誤差を 30 から 50 に緩和
+    // SALUTE_POSE の許容誤差
     SALUTE_TOLERANCE: 50,
+    
+    // ★ 最終変更点: ASYM_ARMS_UP_DOWN の許容誤差を 90 度に緩和
+    ASYM_UP_DOWN_TOLERANCE: 60,
 };
 
 export const LANDMARKS = LANDMARK_INDICES;
