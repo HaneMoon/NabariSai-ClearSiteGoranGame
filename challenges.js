@@ -48,45 +48,56 @@ export const T_POSE_CHALLENGES = [
         requiredStartPose: 'T_POSE', 
         imageSrc: './images/kawaii_pose_overlay.png', 
     },
-    {
-        id: 'LIFT_RIGHT', // 右手を上げる
-        name: "右手を上げる",
-        message: "【T字スタート】右手を垂直に上げてポーズを維持してください。",
-        targetType: 'ARM',
-        evalJoints: ['R_SHOULDER', 'R_ELBOW'],
-        requiredStartPose: 'T_POSE', 
-        imageSrc: './images/kawaii_pose_overlay.png', 
-    },
-    // 片腕90度屈曲ポーズ (左)
-    {
-        id: 'L_SHAPE_LEFT',
-        name: "片腕90度屈曲ポーズ (左)", 
-        message: "【T字スタート】左上腕を下に45度、前腕を上に45度にし、右腕は力を抜いて下げてください。", 
-        targetType: 'SINGLE_L_SHAPE', 
-        evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER'], 
-        requiredStartPose: 'T_POSE', 
-        imageSrc: './images/kawaii_pose_overlay.png', 
-    },
-    // 追加: 動的な突進・投擲ポーズ
-    {
-        id: 'DYNAMIC_DASH_POSE', 
-        name: "突進・投擲ポーズ",
-        message: "【T字スタート】体全体を前に傾け、片膝を深く曲げ、片腕を斜め上に振りかぶってください。",
-        targetType: 'DYNAMIC_DASH', // 新しい評価タイプ
-        evalJoints: ['L_SHOULDER', 'L_HIP', 'L_KNEE', 'R_KNEE'], // 評価する関節
-        requiredStartPose: 'T_POSE', 
-        imageSrc: './images/dynamic_dash_overlay.png', // 画像パスを保持
-    },
-    // ★ 修正: 剣を構えるポーズ (片腕判定に変更)
+    // 剣を構えるポーズ (右腕のみ判定に変更)
     {
         id: 'SWORD_POSE',
-        name: "剣を構えるポーズ (片手剣)",
-        message: "【T字スタート】右腕で剣を構えるポーズを取り、左腕は自然に下げてください。",
-        targetType: 'SINGLE_SWORD_POSE', // 新しいタイプに変更
-        // 評価対象: 右肩、右肘、左肩（下ろし判定）
-        evalJoints: ['R_SHOULDER', 'R_ELBOW', 'L_SHOULDER'], 
+        name: "剣を構えるポーズ (右腕のみ)",
+        message: "【T字スタート】右腕で剣を構えるポーズを維持してください。",
+        targetType: 'SINGLE_SWORD_POSE',
+        // 評価対象: 右肩と右肘のみに限定
+        evalJoints: ['R_SHOULDER', 'R_ELBOW'], 
         requiredStartPose: 'T_POSE',
         imageSrc: './images/sword_pose_overlay.png', 
+    },
+    // 剣の握りポーズ
+    {
+        id: 'SWORD_GRIP_POSE',
+        name: "両腕の剣握りポーズ",
+        message: "【T字スタート】両腕を水平よりやや下に下げ、肘を曲げて握り込むポーズを維持してください。",
+        targetType: 'SWORD_GRIP', // 新しい評価タイプ
+        evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], // 両肩と両肘
+        requiredStartPose: 'T_POSE', 
+        imageSrc: './images/sword_grip_overlay.png', // 新しい画像 (仮)
+    },
+    // 頭上での屈曲ポーズ
+    {
+        id: 'HIGH_SIDE_BEND_POSE',
+        name: "頭上での光線ポーズ",
+        message: "【T字スタート】両腕を頭上に上げて肘を曲げ、体幹を大きく傾けてください。",
+        targetType: 'SIDE_BEND_ARMS', // 新しい評価タイプ
+        evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
+        requiredStartPose: 'T_POSE', 
+        imageSrc: './images/high_side_bend_overlay.png', // 新しい画像 (仮)
+    },
+    // ARCHERY_POSE
+    {
+        id: 'ARCHERY_POSE',
+        name: "非対称の弓引きポーズ",
+        message: "【T字スタート】右肘を曲げて頭の後ろに、左腕を水平に伸ばしてポーズを維持してください。",
+        targetType: 'ASYM_ARCHERY_ARMS', // 新しい評価タイプ
+        evalJoints: ['L_SHOULULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
+        requiredStartPose: 'T_POSE', 
+        imageSrc: './images/archery_pose_overlay.png', // 新しい画像 (仮)
+    },
+    // ★ 追加: SALUTE_POSE
+    {
+        id: 'SALUTE_POSE',
+        name: "敬礼ポーズ",
+        message: "【T字スタート】右腕を曲げて敬礼の形に、左腕は自然に下げてポーズを維持してください。",
+        targetType: 'ASYM_SALUTE_ARMS', // 新しい評価タイプ
+        evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
+        requiredStartPose: 'T_POSE', 
+        imageSrc: './images/salute_pose_overlay.png', // 新しい画像 (仮)
     },
 ];
 
@@ -105,52 +116,67 @@ export const TARGET_ANGLES = {
     L_SHAPE_SHOULDER: 90, 
     L_SHAPE_ELBOW: 90, 
     
-    // 90度屈曲ポーズの目標角度
-    DEGREE_135: 135,
-    DEGREE_90: 90,
-    
     // 腕を下ろすポーズの目標角度（垂直）
     ARM_DOWN: 170, 
     
     // T字ポーズ
     T_POSE_SHOULDER: 90, 
     T_POSE_ELBOW: 170, 
-    KNEE_STRAIGHT: 165, 
     
-    // DYNAMIC_DASH の目標角度
-    DASH_HIP: 140,       
-    DASH_KNEE_FRONT: 100, 
-    DASH_KNEE_BACK: 170,  
-    DASH_THROW_SHOULDER: 150, 
-    DASH_THROW_ELBOW: 160,    
-    DASH_TILT: 20,           
+    // SWORD_POSE の目標角度 
+    SWORD_SHOULDER: 100,     
+    SWORD_ELBOW: 160,        
+    
+    // SWORD_GRIP_POSE の目標角度 
+    GRIP_SHOULDER: 120,      
+    GRIP_ELBOW: 90,          
 
-    // ★ 修正: SINGLE_SWORD_POSE の目標角度 
-    SWORD_SHOULDER: 100,     // 右肩を斜め前に構える角度（ヒップ-肩-肘）
-    SWORD_ELBOW: 160,        // 右肘を少し曲げる角度
+    // HIGH_SIDE_BEND_POSE の目標角度 (非対称)
+    SIDE_BEND_SHOULDER: 160, 
+    SIDE_BEND_R_ELBOW: 70,   
+    SIDE_BEND_L_ELBOW: 85,   
+    
+    // ARCHERY_POSE の目標角度
+    ARCHERY_R_SHOULDER: 165, 
+    ARCHERY_R_ELBOW: 60,     
+    ARCHERY_L_SHOULDER: 90,  
+    ARCHERY_L_ELBOW: 170,    
+    
+    // ★ 追加: SALUTE_POSE の目標角度
+    SALUTE_R_SHOULDER: 100, // 敬礼腕: 水平より少し上
+    SALUTE_R_ELBOW: 50,     // 敬礼腕: 鋭角に曲げる
+    SALUTE_L_SHOULDER: 175, // 下げ腕: ほぼまっすぐ下
+    SALUTE_L_ELBOW: 170,    // 下げ腕: ほぼまっすぐ
 };
 
 export const TOLERANCE = {
+    // 全ての汎用許容誤差を 30 に維持
     ELBOW: 30,  
-    SHOULDER: 40, 
-    KNEE: 20, 
-    TILT: 15, 
+    SHOULDER: 30, 
+    KNEE: 30, 
+    TILT: 30, 
     
-    // L字ポーズの許容誤差
+    // 各ポーズの許容誤差を 30/40/60 にて維持
     L_SHAPE_TOLERANCE: 30, 
-    // 腕を下ろすポーズの許容誤差 (流用)
-    ARM_DOWN_TOLERANCE: 20,
-    
-    // スタートポーズの許容誤差
+    ARM_DOWN_TOLERANCE: 30, 
     START_TOLERANCE_VERTICAL: 30, 
-    // T字ポーズの許容誤差
     START_TOLERANCE_T_POSE: 30, 
-    
-    // DYNAMIC_DASH の許容誤差
     DASH_TOLERANCE: 30, 
 
-    // ★ 修正: SINGLE_SWORD_POSE の許容誤差
-    SWORD_TOLERANCE: 40, // 厳しすぎないよう調整
+    // SWORD_POSE の許容誤差
+    SWORD_TOLERANCE: 30, 
+    
+    // SWORD_GRIP_POSE の許容誤差
+    GRIP_TOLERANCE: 40,      
+    
+    // SIDE_BEND_ARMS の許容誤差
+    SIDE_BEND_TOLERANCE: 60,
+    
+    // ARCHERY_POSE の許容誤差
+    ARCHERY_TOLERANCE: 60,
+    
+    // ★ 変更: SALUTE_POSE の許容誤差を 30 から 50 に緩和
+    SALUTE_TOLERANCE: 50,
 };
 
 export const LANDMARKS = LANDMARK_INDICES;

@@ -104,7 +104,7 @@ function calculateAngle(A, M, B) {
 }
 
 /**
- * 2つのランドマークを結ぶ線の垂直からの傾き角度を計算 (新規追加)
+ * 2つのランドマークを結ぶ線の垂直からの傾き角度を計算 
  * @param {object} L1 - ランドマーク1 (例: HIP)
  * @param {object} L2 - ランドマーク2 (例: SHOULDER)
  * @returns {number} 垂直からの傾き角度 (0-90度)
@@ -210,6 +210,7 @@ function calculateMatchScore(currentLandmarks) {
     let totalScore = 0;
     let jointCount = 0;
     const VISIBILITY_THRESHOLD = 0.5; 
+    const GRIP_VISIBILITY_THRESHOLD = 0.3; 
     
     // 早期リターンチェック: ポーズが全く検出されない場合
     if (!currentLandmarks[L.LEFT_SHOULDER] || currentLandmarks[L.LEFT_SHOULDER].visibility < 0.1) return 0;
@@ -320,123 +321,15 @@ function calculateMatchScore(currentLandmarks) {
         }
     }
     
-    // --- 3. SINGLE_L_SHAPE (左上腕下45度、前腕上45度ポーズ) の評価ロジック
-    else if (challenge.targetType === 'SINGLE_L_SHAPE') {
-        const targetShoulder = target.DEGREE_135; 
-        const targetElbow = target.DEGREE_90;    
-        const targetArmDown = target.ARM_DOWN;    
-        const poseTolerance = tolerance.L_SHAPE_TOLERANCE; 
-        const downTolerance = tolerance.ARM_DOWN_TOLERANCE;
-        
-        const L_S = L.LEFT_SHOULDER;
-        const L_E = L.LEFT_ELBOW;
-        const L_W = L.LEFT_WRIST;
-        const L_H = L.LEFT_HIP;
-
-        const R_S = L.RIGHT_SHOULDER;
-        const R_E = L.RIGHT_ELBOW;
-        const R_H = L.RIGHT_HIP;
-        
-        // --- 3-A. 左腕（ターゲットポーズ側）の評価 ---
-        if (currentLandmarks[L_S] && currentLandmarks[L_E] && currentLandmarks[L_W] && currentLandmarks[L_H]) {
-            const currentElbowAngle = calculateAngle(currentLandmarks[L_S], currentLandmarks[L_E], currentLandmarks[L_W]);
-            const currentShoulderAngle = calculateAngle(currentLandmarks[L_H], currentLandmarks[L_S], currentLandmarks[L_E]);
-            
-            const diffElbow = Math.abs(currentElbowAngle - targetElbow);
-            const diffShoulder = Math.abs(currentShoulderAngle - targetShoulder);
-            
-            const scoreElbow = 100 * (1 - (diffElbow / poseTolerance));
-            const scoreShoulder = 100 * (1 - (diffShoulder / poseTolerance));
-
-            totalScore += Math.max(0, scoreElbow);
-            totalScore += Math.max(0, scoreShoulder);
-            jointCount += 2;
-        } else {
-            return 0;
-        }
-
-        // --- 3-B. 右腕（下ろす側）の評価 ---
-        if (currentLandmarks[R_S] && currentLandmarks[R_E] && currentLandmarks[R_H]) {
-            const currentRightShoulderAngle = calculateAngle(currentLandmarks[R_H], currentLandmarks[R_S], currentLandmarks[R_E]);
-            const diffArmDown = Math.abs(currentRightShoulderAngle - targetArmDown);
-            
-            const scoreArmDown = 100 * (1 - (diffArmDown / downTolerance));
-
-            totalScore += Math.max(0, scoreArmDown);
-            jointCount += 1;
-        } else {
-            return 0;
-        }
-    }
-    
-    // 4. DYNAMIC_DASH (突進・投擲ポーズ) の評価ロジック
-    else if (challenge.targetType === 'DYNAMIC_DASH') {
-        
-        const S_L = L.LEFT_SHOULDER, H_L = L.LEFT_HIP, K_L = L.LEFT_KNEE;
-        const S_R = L.RIGHT_SHOULDER, H_R = L.RIGHT_HIP, K_R = L.RIGHT_KNEE, E_R = L.RIGHT_ELBOW, W_R = L.RIGHT_WRIST;
-        const T = target;
-        const TOL = tolerance.DASH_TOLERANCE;
-        
-        // 必須ランドマークの可視性チェック (最低限の確認)
-        if (!currentLandmarks[S_L] || !currentLandmarks[H_L] || 
-            !currentLandmarks[K_L] || !currentLandmarks[K_R] || 
-            !currentLandmarks[S_R] || !currentLandmarks[W_R] ||
-            currentLandmarks[S_L].visibility < VISIBILITY_THRESHOLD) {
-            return 0;
-        }
-
-        // --- 4-A. 体幹の傾き (TILT) の評価 ---
-        const currentTilt = calculateVerticalTiltAngle(currentLandmarks[H_L], currentLandmarks[S_L]);
-        const scoreTilt = calculateScore(currentTilt, T.DASH_TILT, tolerance.TILT);
-        totalScore += scoreTilt;
-        jointCount++;
-        
-        // --- 4-B. 前足（左足）のポーズ評価 ---
-        // 股関節の角度 (左肩-左腰-左膝)
-        const currentHipAngle = calculateAngle(currentLandmarks[S_L], currentLandmarks[H_L], currentLandmarks[K_L]);
-        const scoreHip = calculateScore(currentHipAngle, T.DASH_HIP, TOL);
-        totalScore += scoreHip;
-        jointCount++;
-        
-        // 左膝の角度 (股関節-膝-足首の角度)
-        const currentKneeAngle = calculateAngle(currentLandmarks[H_L], currentLandmarks[K_L], L.LEFT_ANKLE);
-        const scoreKneeFront = calculateScore(currentKneeAngle, T.DASH_KNEE_FRONT, TOL);
-        totalScore += scoreKneeFront;
-        jointCount++;
-
-        // --- 4-C. 後ろ足（右足）のポーズ評価 (伸展度) ---
-        // 右膝の角度 (股関節-膝-足首の角度)
-        const currentKneeBackAngle = calculateAngle(currentLandmarks[H_R], currentLandmarks[K_R], L.RIGHT_ANKLE);
-        const scoreKneeBack = calculateScore(currentKneeBackAngle, T.DASH_KNEE_BACK, TOL);
-        totalScore += scoreKneeBack;
-        jointCount++;
-
-        // --- 4-D. 投げ腕（右腕）のポーズ評価 ---
-        // 右肩の角度 (右腰-右肩-右肘)
-        const currentShoulderThrowAngle = calculateAngle(currentLandmarks[H_R], currentLandmarks[S_R], currentLandmarks[E_R]);
-        const scoreShoulderThrow = calculateScore(currentShoulderThrowAngle, T.DASH_THROW_SHOULDER, TOL);
-        totalScore += scoreShoulderThrow;
-        jointCount++;
-
-        // 右肘の角度 (右肩-右肘-右手首)
-        const currentElbowThrowAngle = calculateAngle(currentLandmarks[S_R], currentLandmarks[E_R], currentLandmarks[W_R]);
-        const scoreElbowThrow = calculateScore(currentElbowThrowAngle, T.DASH_THROW_ELBOW, TOL);
-        totalScore += scoreElbowThrow;
-        jointCount++;
-    }
-    
-    // ★ 5. SINGLE_SWORD_POSE (片手剣ポーズ) の評価ロジック (新規追加/修正)
+    // 5. SINGLE_SWORD_POSE (片手剣ポーズ - 右腕のみ判定) の評価ロジック
     else if (challenge.targetType === 'SINGLE_SWORD_POSE') {
-        const S_L = L.LEFT_SHOULDER, H_L = L.LEFT_HIP;
         const S_R = L.RIGHT_SHOULDER, E_R = L.RIGHT_ELBOW, W_R = L.RIGHT_WRIST, H_R = L.RIGHT_HIP;
         const T = target;
         const SWORD_TOL = tolerance.SWORD_TOLERANCE;
-        const DOWN_TOL = tolerance.ARM_DOWN_TOLERANCE;
 
-        // 必須ランドマークの可視性チェック
+        // 必須ランドマークの可視性チェック (右腕に必要なもの)
         if (!currentLandmarks[S_R] || !currentLandmarks[E_R] || !currentLandmarks[W_R] ||
-            !currentLandmarks[H_R] || !currentLandmarks[S_L] || !currentLandmarks[H_L] ||
-            currentLandmarks[S_R].visibility < VISIBILITY_THRESHOLD) {
+            !currentLandmarks[H_R] || currentLandmarks[S_R].visibility < VISIBILITY_THRESHOLD) {
             return 0;
         }
 
@@ -452,26 +345,166 @@ function calculateMatchScore(currentLandmarks) {
         totalScore += calculateScore(currentRightElbowAngle, T.SWORD_ELBOW, SWORD_TOL);
         jointCount++;
         
-        // --- 5-B. 補助腕（左腕）の評価 (下ろし判定) ---
-        // 左肩の角度 (左腰-左肩-左肘)
-        if (currentLandmarks[L.LEFT_ELBOW]) { // 肘が検出されているか確認
-            const currentLeftShoulderAngle = calculateAngle(currentLandmarks[H_L], currentLandmarks[S_L], currentLandmarks[L.LEFT_ELBOW]);
-            totalScore += calculateScore(currentLeftShoulderAngle, T.ARM_DOWN, DOWN_TOL); // ARM_DOWNは170度
-            jointCount++;
-        }
-        
-        // スコアを低く保つための追加チェック (左腕が上がっていないこと)
-        // 左肩のY座標が右肩のY座標よりもかなり上にある場合はペナルティを与えるロジックなども追加可能だが、今回は単純化のため上記の判定のみとする。
+        // 左腕の判定ロジックは削除済み
     }
     
-    // jointCountが0の場合にNaNを返すのを防ぐ (この行は前回の修正で存在したが、念のため強調)
+    // 6. SWORD_GRIP (両腕の剣握りポーズ - 両肩と両肘のみ) の評価ロジック
+    else if (challenge.targetType === 'SWORD_GRIP') {
+        const sides = ['LEFT', 'RIGHT'];
+        const T = target;
+        const GRIP_TOL = tolerance.GRIP_TOLERANCE;
+        
+        for (const side of sides) {
+            const S = L[`${side}_SHOULDER`];
+            const E = L[`${side}_ELBOW`];
+            const H = L[`${side}_HIP`];
+            const W = L[`${side}_WRIST`];
+            
+            // 必須ランドマークの可視性チェック (可視性閾値 0.3 を使用)
+            if (!currentLandmarks[S] || !currentLandmarks[E] || !currentLandmarks[H] || !currentLandmarks[W] ||
+                currentLandmarks[S].visibility < GRIP_VISIBILITY_THRESHOLD ||
+                currentLandmarks[E].visibility < GRIP_VISIBILITY_THRESHOLD ||
+                currentLandmarks[H].visibility < GRIP_VISIBILITY_THRESHOLD ||
+                currentLandmarks[W].visibility < GRIP_VISIBILITY_THRESHOLD) { 
+                return 0; 
+            }
+            
+            // 肩の角度 (腰-肩-肘)
+            const currentShoulderAngle = calculateAngle(currentLandmarks[H], currentLandmarks[S], currentLandmarks[E]);
+            totalScore += calculateScore(currentShoulderAngle, T.GRIP_SHOULDER, GRIP_TOL);
+            jointCount++;
+
+            // 肘の角度 (肩-肘-手首)
+            const currentElbowAngle = calculateAngle(currentLandmarks[S], currentLandmarks[E], currentLandmarks[W]);
+            totalScore += calculateScore(currentElbowAngle, T.GRIP_ELBOW, GRIP_TOL);
+            jointCount++;
+        }
+    }
+
+    // 7. SIDE_BEND_ARMS (頭上での屈曲ポーズ) の評価ロジック
+    else if (challenge.targetType === 'SIDE_BEND_ARMS') {
+        const T = target;
+        const BEND_TOL = tolerance.SIDE_BEND_TOLERANCE; 
+
+        // 右腕の判定 (より鋭角な曲げ)
+        const R_S = L.RIGHT_SHOULDER, R_E = L.RIGHT_ELBOW, R_H = L.RIGHT_HIP, R_W = L.RIGHT_WRIST;
+        
+        // 必須ランドマークの可視性チェックの強化
+        if (currentLandmarks[R_S] && currentLandmarks[R_E] && currentLandmarks[R_H] && currentLandmarks[R_W] &&
+            currentLandmarks[R_S].visibility > GRIP_VISIBILITY_THRESHOLD && 
+            currentLandmarks[R_E].visibility > GRIP_VISIBILITY_THRESHOLD &&
+            currentLandmarks[R_W].visibility > GRIP_VISIBILITY_THRESHOLD) {
+            
+            const rightShoulderAngle = calculateAngle(currentLandmarks[R_H], currentLandmarks[R_S], currentLandmarks[R_E]);
+            const rightElbowAngle = calculateAngle(currentLandmarks[R_S], currentLandmarks[R_E], currentLandmarks[R_W]);
+            
+            totalScore += calculateScore(rightShoulderAngle, T.SIDE_BEND_SHOULDER, BEND_TOL);
+            totalScore += calculateScore(rightElbowAngle, T.SIDE_BEND_R_ELBOW, BEND_TOL);
+            jointCount += 2;
+        } else {
+            return 0; 
+        }
+
+        // 左腕の判定 (やや緩やかな曲げ)
+        const L_S = L.LEFT_SHOULDER, L_E = L.LEFT_ELBOW, L_H = L.LEFT_HIP, L_W = L.LEFT_WRIST;
+        
+        // 必須ランドマークの可視性チェックの強化
+        if (currentLandmarks[L_S] && currentLandmarks[L_E] && currentLandmarks[L_H] && currentLandmarks[L_W] &&
+            currentLandmarks[L_S].visibility > GRIP_VISIBILITY_THRESHOLD &&
+            currentLandmarks[L_E].visibility > GRIP_VISIBILITY_THRESHOLD &&
+            currentLandmarks[L_W].visibility > GRIP_VISIBILITY_THRESHOLD) {
+            
+            const leftShoulderAngle = calculateAngle(currentLandmarks[L_H], currentLandmarks[L_S], currentLandmarks[L_E]);
+            const leftElbowAngle = calculateAngle(currentLandmarks[L_S], currentLandmarks[L_E], currentLandmarks[L_W]);
+            
+            totalScore += calculateScore(leftShoulderAngle, T.SIDE_BEND_SHOULDER, BEND_TOL);
+            totalScore += calculateScore(leftElbowAngle, T.SIDE_BEND_L_ELBOW, BEND_TOL);
+            jointCount += 2;
+        } else {
+            return 0; 
+        }
+    }
+    
+    // 8. ASYM_ARCHERY_ARMS (非対称の弓引きポーズ) の評価ロジック
+    else if (challenge.targetType === 'ASYM_ARCHERY_ARMS') {
+        const T = target;
+        const ARCH_TOL = tolerance.ARCHERY_TOLERANCE; 
+        const ARCH_VISIBILITY_THRESHOLD = GRIP_VISIBILITY_THRESHOLD; 
+        
+        let isLeftArmVisible = currentLandmarks[L.LEFT_SHOULDER] && currentLandmarks[L.LEFT_ELBOW] && currentLandmarks[L.LEFT_WRIST] && currentLandmarks[L.LEFT_HIP] &&
+                                currentLandmarks[L.LEFT_SHOULDER].visibility > ARCH_VISIBILITY_THRESHOLD &&
+                                currentLandmarks[L.LEFT_ELBOW].visibility > ARCH_VISIBILITY_THRESHOLD &&
+                                currentLandmarks[L.LEFT_WRIST].visibility > ARCH_VISIBILITY_THRESHOLD;
+
+        let isRightArmVisible = currentLandmarks[L.RIGHT_SHOULDER] && currentLandmarks[L.RIGHT_ELBOW] && currentLandmarks[L.RIGHT_WRIST] && currentLandmarks[L.RIGHT_HIP] &&
+                                currentLandmarks[L.RIGHT_SHOULDER].visibility > ARCH_VISIBILITY_THRESHOLD &&
+                                currentLandmarks[L.RIGHT_ELBOW].visibility > ARCH_VISIBILITY_THRESHOLD &&
+                                currentLandmarks[L.RIGHT_WRIST].visibility > ARCH_VISIBILITY_THRESHOLD;
+        
+        if (!isLeftArmVisible || !isRightArmVisible) {
+            return 0;
+        }
+        
+        // --- 右腕 (曲げている側) の判定 ---
+        const rightShoulderAngle = calculateAngle(currentLandmarks[L.RIGHT_HIP], currentLandmarks[L.RIGHT_SHOULDER], currentLandmarks[L.RIGHT_ELBOW]);
+        const rightElbowAngle = calculateAngle(currentLandmarks[L.RIGHT_SHOULDER], currentLandmarks[L.RIGHT_ELBOW], currentLandmarks[L.RIGHT_WRIST]);
+        
+        totalScore += calculateScore(rightShoulderAngle, T.ARCHERY_R_SHOULDER, ARCH_TOL);
+        totalScore += calculateScore(rightElbowAngle, T.ARCHERY_R_ELBOW, ARCH_TOL);
+        jointCount += 2;
+
+        // --- 左腕 (伸ばしている側) の判定 ---
+        const leftShoulderAngle = calculateAngle(currentLandmarks[L.LEFT_HIP], currentLandmarks[L.LEFT_SHOULDER], currentLandmarks[L.LEFT_ELBOW]);
+        const leftElbowAngle = calculateAngle(currentLandmarks[L.LEFT_SHOULDER], currentLandmarks[L.LEFT_ELBOW], currentLandmarks[L.LEFT_WRIST]);
+        
+        totalScore += calculateScore(leftShoulderAngle, T.ARCHERY_L_SHOULDER, ARCH_TOL);
+        totalScore += calculateScore(leftElbowAngle, T.ARCHERY_L_ELBOW, ARCH_TOL);
+        jointCount += 2;
+    }
+
+    // ★ 9. ASYM_SALUTE_ARMS (敬礼ポーズ) の評価ロジック (追加)
+    else if (challenge.targetType === 'ASYM_SALUTE_ARMS') {
+        const T = target;
+        const SALUTE_TOL = tolerance.SALUTE_TOLERANCE; // 30 を使用
+        const SALUTE_VISIBILITY_THRESHOLD = VISIBILITY_THRESHOLD; // 0.5 を使用
+        
+        let isLeftArmVisible = currentLandmarks[L.LEFT_SHOULDER] && currentLandmarks[L.LEFT_ELBOW] && currentLandmarks[L.LEFT_WRIST] && currentLandmarks[L.LEFT_HIP] &&
+                                currentLandmarks[L.LEFT_SHOULDER].visibility > SALUTE_VISIBILITY_THRESHOLD &&
+                                currentLandmarks[L.LEFT_ELBOW].visibility > SALUTE_VISIBILITY_THRESHOLD &&
+                                currentLandmarks[L.LEFT_WRIST].visibility > SALUTE_VISIBILITY_THRESHOLD;
+
+        let isRightArmVisible = currentLandmarks[L.RIGHT_SHOULDER] && currentLandmarks[L.RIGHT_ELBOW] && currentLandmarks[L.RIGHT_WRIST] && currentLandmarks[L.RIGHT_HIP] &&
+                                currentLandmarks[L.RIGHT_SHOULDER].visibility > SALUTE_VISIBILITY_THRESHOLD &&
+                                currentLandmarks[L.RIGHT_ELBOW].visibility > SALUTE_VISIBILITY_THRESHOLD &&
+                                currentLandmarks[L.RIGHT_WRIST].visibility > SALUTE_VISIBILITY_THRESHOLD;
+        
+        if (!isLeftArmVisible || !isRightArmVisible) {
+            return 0;
+        }
+
+        // --- 右腕 (敬礼側) の判定 ---
+        const rightShoulderAngle = calculateAngle(currentLandmarks[L.RIGHT_HIP], currentLandmarks[L.RIGHT_SHOULDER], currentLandmarks[L.RIGHT_ELBOW]);
+        const rightElbowAngle = calculateAngle(currentLandmarks[L.RIGHT_SHOULDER], currentLandmarks[L.RIGHT_ELBOW], currentLandmarks[L.RIGHT_WRIST]);
+        
+        totalScore += calculateScore(rightShoulderAngle, T.SALUTE_R_SHOULDER, SALUTE_TOL);
+        totalScore += calculateScore(rightElbowAngle, T.SALUTE_R_ELBOW, SALUTE_TOL);
+        jointCount += 2;
+
+        // --- 左腕 (下げている側) の判定 ---
+        const leftShoulderAngle = calculateAngle(currentLandmarks[L.LEFT_HIP], currentLandmarks[L.LEFT_SHOULDER], currentLandmarks[L.LEFT_ELBOW]);
+        const leftElbowAngle = calculateAngle(currentLandmarks[L.LEFT_SHOULDER], currentLandmarks[L.LEFT_ELBOW], currentLandmarks[L.LEFT_WRIST]);
+        
+        totalScore += calculateScore(leftShoulderAngle, T.SALUTE_L_SHOULDER, SALUTE_TOL);
+        totalScore += calculateScore(leftElbowAngle, T.SALUTE_L_ELBOW, SALUTE_TOL);
+        jointCount += 2;
+    }
+    
+    // jointCountが0の場合にNaNを返すのを防ぐ
     if (jointCount === 0) return 0;
     
     // ゼロ除算のチェックが通過したため、安全に計算
     const finalScore = totalScore / jointCount;
     
-    // finalScoreがNaNになるのは、totalScoreもjointCountもNaN/Infinityになる稀なケース。
-    // そのような場合は0を返し、そうでなければクリップする。
     if (isNaN(finalScore)) return 0;
     
     return Math.min(100, finalScore); 
@@ -630,6 +663,9 @@ function forceStartChallenge() {
 /**
  * カウントダウンタイマーを開始する
  */
+/**
+ * カウントダウンタイマーを開始する
+ */
 function startChallengeTimer() {
     if (isChallengeStarted) return;
     isChallengeStarted = true;
@@ -642,19 +678,23 @@ function startChallengeTimer() {
     timerDisplayElement.classList.add('show-timer');
     
     const currentChallenge = CURRENT_CHALLENGES[currentChallengeIndex];
+    // 【T字スタート】などの開始条件表記を削除
+    const baseMessage = currentChallenge.message.replace(/【.+】/, ''); 
+    
     if (currentChallengeNameElement) {
         currentChallengeNameElement.textContent = `▶️ ${currentChallenge.name}`;
     }
 
-    let intervalCount = 0; // 新しいカウンターを導入
+    let intervalCount = 0; 
 
     // 最初の表示を「3」にするため、最初に表示をセット
     timerDisplayElement.textContent = COUNTDOWN_SECONDS; 
-    guideMessageElement.textContent = `ポーズを取る準備！残り ${COUNTDOWN_SECONDS} 秒！`;
+    // ポーズの詳細メッセージを表示
+    guideMessageElement.textContent = `${baseMessage} | 準備: ${COUNTDOWN_SECONDS} 秒`;
 
     challengeTimerId = setInterval(() => {
         intervalCount++;
-        const elapsed = intervalCount; // カウントされた秒数（1から始まる）
+        const elapsed = intervalCount; 
 
         if (currentChallengeNameElement) {
             currentChallengeNameElement.textContent = `▶️ ${currentChallenge.name}`;
@@ -664,18 +704,21 @@ function startChallengeTimer() {
         if (elapsed < COUNTDOWN_SECONDS) {
             const remaining = COUNTDOWN_SECONDS - elapsed;
             timerDisplayElement.textContent = remaining;
-            guideMessageElement.textContent = `ポーズを取る準備！残り ${remaining} 秒！`;
+            // ポーズの詳細メッセージを維持
+            guideMessageElement.textContent = `${baseMessage} | 準備: ${remaining} 秒`;
         } 
         // GO! フェーズ（計測開始）
         else if (elapsed === COUNTDOWN_SECONDS) {
              timerDisplayElement.textContent = 'GO!';
-             guideMessageElement.textContent = `ポーズを維持してください！測定中... 1 / ${HOLD_SECONDS} 秒`;
+             // ポーズの詳細メッセージを維持し、測定中であることを示す
+             guideMessageElement.textContent = `${baseMessage} | 測定中: 1 / ${HOLD_SECONDS} 秒`;
         }
         // ホールドフェーズ
         else if (elapsed < TOTAL_DELAY_SECONDS) {
             const holdTime = elapsed - COUNTDOWN_SECONDS;
             timerDisplayElement.textContent = 'GO!'; // GO! を維持
-            guideMessageElement.textContent = `ポーズを維持してください！測定中... ${holdTime + 1} / ${HOLD_SECONDS} 秒`;
+            // ポーズの詳細メッセージを維持
+            guideMessageElement.textContent = `${baseMessage} | 測定中: ${holdTime + 1} / ${HOLD_SECONDS} 秒`;
         } 
         // 終了
         else {
@@ -717,6 +760,9 @@ function startChallengeTimer() {
                  currentChallengeNameElement.textContent = `✅ ${CURRENT_CHALLENGES[currentChallengeIndex].name}`;
              }
 
+            // ★ 修正点: スコア確定直後、isChallengeStarted を false にリセットする
+            isChallengeStarted = false; 
+            
             // スコア確定後、次のチャレンジへ移行
             setTimeout(() => {
                 resetChallenge(true);
@@ -724,7 +770,6 @@ function startChallengeTimer() {
         }
     }, 1000);
 }
-
 
 // -------------------------------------------------------------------------
 // MediaPipeとカメラの初期化
@@ -760,7 +805,8 @@ camera.start().then(() => {
     }
 
 }).catch(error => {
-    guideMessageElement.textContent = `エラー: カメラの起動に失敗しました。アクセスを許可してください。 (${error.name})`;
+    // ★ 修正点: エラーメッセージをより明確にカメラ許可の必要性に言及するように変更
+    guideMessageElement.textContent = `🚨 **エラー: カメラの起動に失敗しました。** ブラウザでカメラのアクセスを許可しているか確認してください。 (${error.name})`;
     console.error("Camera start failed:", error);
 });
 
