@@ -62,8 +62,8 @@ export const T_POSE_CHALLENGES = [
     // 剣の握りポーズ
     {
         id: 'SWORD_GRIP_POSE',
-        name: "両腕の剣握りポーズ",
-        message: "【T字スタート】両腕を水平よりやや下に下げ、肘を曲げて握り込むポーズを維持してください。",
+        name: "頭上でビームポーズ",
+        message: "【T字スタート】両腕を水平よりやや下に下げ、肘を曲げてビームポーズを維持してください。",
         targetType: 'SWORD_GRIP', // 新しい評価タイプ
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], // 両肩と両肘
         requiredStartPose: 'T_POSE', 
@@ -72,8 +72,8 @@ export const T_POSE_CHALLENGES = [
     // 頭上での屈曲ポーズ
     {
         id: 'HIGH_SIDE_BEND_POSE',
-        name: "頭上での光線ポーズ",
-        message: "【T字スタート】両腕を頭上に上げて肘を曲げ、体幹を大きく傾けてください。",
+        name: "大剣ポーズ",
+        message: "【T字スタート】両腕を頭上に上げて肘を曲げ、体幹を大きく傾けて剣を握るようにしてください。",
         targetType: 'SIDE_BEND_ARMS', // 新しい評価タイプ
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
         requiredStartPose: 'T_POSE', 
@@ -110,25 +110,25 @@ export const T_POSE_CHALLENGES = [
         imageSrc: './images/posePikt/びっくり.png', // 新しい画像 (仮)
     },
     // 忠誠を誓う人ポーズ
-    {
-        id: 'OATH_POSE',
-        name: "忠誠を誓う人ポーズ",
-        message: "【T字スタート】右腕を前方に、左腕を腰に添えるポーズを維持してください。",
-        targetType: 'ASYM_OATH_ARMS', // 新しい評価タイプ
-        evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
-        requiredStartPose: 'T_POSE', 
-        imageSrc: './images/oath_pose_overlay.png', // 新しい画像 (仮)
-    },
+    // {
+    //     id: 'OATH_POSE',
+    //     name: "忠誠を誓う人ポーズ",
+    //     message: "【T字スタート】右腕を前方に、左腕を腰に添えるポーズを維持してください。",
+    //     targetType: 'ASYM_OATH_ARMS', // 新しい評価タイプ
+    //     evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
+    //     requiredStartPose: 'T_POSE', 
+    //     imageSrc: './images/oath_pose_overlay.png', // 新しい画像 (仮)
+    // },
     // FUSION_POSE
-    {
-        id: 'FUSION_POSE',
-        name: "フュージョンポーズ",
-        message: "【T字スタート】両腕を体の前に突き出し、人差し指を近づけてポーズを維持してください。",
-        targetType: 'FUSION_ARMS', // 新しい評価タイプ
-        evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
-        requiredStartPose: 'T_POSE', 
-        imageSrc: './images/fusion_pose_overlay.png', // 新しい画像 (仮)
-    },
+    // {
+    //     id: 'FUSION_POSE',
+    //     name: "フュージョンポーズ",
+    //     message: "【T字スタート】両腕を体の前に突き出し、人差し指を近づけてポーズを維持してください。",
+    //     targetType: 'FUSION_ARMS', // 新しい評価タイプ
+    //     evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
+    //     requiredStartPose: 'T_POSE', 
+    //     imageSrc: './images/fusion_pose_overlay.png', // 新しい画像 (仮)
+    // },
 
     {
         id: 'LEFT_ARM_UP_RIGHT_ARM_DOWN',
