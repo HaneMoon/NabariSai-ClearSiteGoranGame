@@ -462,7 +462,7 @@ function calculateMatchScore(currentLandmarks) {
         jointCount += 2;
     }
 
-    // ★ 9. ASYM_SALUTE_ARMS (敬礼ポーズ) の評価ロジック (追加)
+    // ★ 9. ASYM_SALUTE_ARMS (敬礼ポーズ) の評価ロジック
     else if (challenge.targetType === 'ASYM_SALUTE_ARMS') {
         const T = target;
         const SALUTE_TOL = tolerance.SALUTE_TOLERANCE; // 30 を使用
@@ -497,6 +497,39 @@ function calculateMatchScore(currentLandmarks) {
         totalScore += calculateScore(leftShoulderAngle, T.SALUTE_L_SHOULDER, SALUTE_TOL);
         totalScore += calculateScore(leftElbowAngle, T.SALUTE_L_ELBOW, SALUTE_TOL);
         jointCount += 2;
+    }
+    
+    // ★ 10. SURPRISE_ARMS (びっくりした人ポーズ) の評価ロジック (追加)
+    else if (challenge.targetType === 'SURPRISE_ARMS') {
+        const sides = ['LEFT', 'RIGHT'];
+        const T = target;
+        const SURPRISE_TOL = tolerance.SURPRISE_TOLERANCE; // 40度を使用
+        const SURPRISE_VISIBILITY_THRESHOLD = VISIBILITY_THRESHOLD; // 0.5 を使用
+        
+        for (const side of sides) {
+            const S = L[`${side}_SHOULDER`];
+            const E = L[`${side}_ELBOW`];
+            const H = L[`${side}_HIP`];
+            const W = L[`${side}_WRIST`]; // 手首もチェック
+            
+            // 必須ランドマークの可視性チェック
+            if (!currentLandmarks[S] || !currentLandmarks[E] || !currentLandmarks[H] || !currentLandmarks[W] ||
+                currentLandmarks[S].visibility < SURPRISE_VISIBILITY_THRESHOLD ||
+                currentLandmarks[E].visibility < SURPRISE_VISIBILITY_THRESHOLD ||
+                currentLandmarks[W].visibility < SURPRISE_VISIBILITY_THRESHOLD) { 
+                return 0; 
+            }
+            
+            // 肩の角度 (腰-肩-肘)
+            const currentShoulderAngle = calculateAngle(currentLandmarks[H], currentLandmarks[S], currentLandmarks[E]);
+            totalScore += calculateScore(currentShoulderAngle, T.SURPRISE_SHOULDER, SURPRISE_TOL);
+            jointCount++;
+
+            // 肘の角度 (肩-肘-手首)
+            const currentElbowAngle = calculateAngle(currentLandmarks[S], currentLandmarks[E], currentLandmarks[W]);
+            totalScore += calculateScore(currentElbowAngle, T.SURPRISE_ELBOW, SURPRISE_TOL);
+            jointCount++;
+        }
     }
     
     // jointCountが0の場合にNaNを返すのを防ぐ

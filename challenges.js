@@ -99,6 +99,16 @@ export const T_POSE_CHALLENGES = [
         requiredStartPose: 'T_POSE', 
         imageSrc: './images/keirei_pose_overlay.png', 
     },
+    // ★ 追加: SURPRISE_POSE
+    {
+        id: 'SURPRISE_POSE',
+        name: "びっくりした人ポーズ",
+        message: "【T字スタート】両腕を水平より少し上に上げ、肘を曲げて手のひらを頭の横に近づけるポーズを維持してください。",
+        targetType: 'SURPRISE_ARMS', // 新しい評価タイプ
+        evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
+        requiredStartPose: 'T_POSE', 
+        imageSrc: './images/surprise_pose_overlay.png', // 新しい画像 (仮)
+    },
 ];
 
 // **全チャレンジのリスト** (変更無し)
@@ -147,6 +157,10 @@ export const TARGET_ANGLES = {
     SALUTE_R_ELBOW: 50,     // 敬礼腕: 鋭角に曲げる
     SALUTE_L_SHOULDER: 175, // 下げ腕: ほぼまっすぐ下
     SALUTE_L_ELBOW: 170,    // 下げ腕: ほぼまっすぐ
+
+    // ★ 追加: SURPRISE_POSE の目標角度 (両腕共通)
+    SURPRISE_SHOULDER: 100, // 肩: 水平より少し上
+    SURPRISE_ELBOW: 60,     // 肘: かなり曲げる
 };
 
 export const TOLERANCE = {
@@ -177,6 +191,9 @@ export const TOLERANCE = {
     
     // ★ 変更: SALUTE_POSE の許容誤差を 30 から 50 に緩和
     SALUTE_TOLERANCE: 50,
+    
+    // ★ 追加: SURPRISE_POSE の許容誤差
+    SURPRISE_TOLERANCE: 40, // 40度を設定 (少し緩めに)
 };
 
 export const LANDMARKS = LANDMARK_INDICES;
