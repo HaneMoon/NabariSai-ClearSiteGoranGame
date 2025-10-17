@@ -119,7 +119,7 @@ export const T_POSE_CHALLENGES = [
         requiredStartPose: 'T_POSE', 
         imageSrc: './images/oath_pose_overlay.png', // 新しい画像 (仮)
     },
-    // ★ 追加: FUSION_POSE
+    // FUSION_POSE
     {
         id: 'FUSION_POSE',
         name: "フュージョンポーズ",
@@ -138,6 +138,18 @@ export const T_POSE_CHALLENGES = [
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
         requiredStartPose: 'T_POSE', 
         imageSrc: './images/left_arm_up_right_arm_down_overlay.png', // 新しい画像 (仮)
+    },
+    
+    // ★ 追加: 自慢する人ポーズ
+    {
+        id: 'JIMAN_POSE',
+        name: "自慢する人ポーズ",
+        message: "【T字スタート】両手を腰に当て、胸を張ってポーズを維持してください。",
+        targetType: 'JIMAN_ARMS', // 新しい評価タイプ
+        // 評価対象に股関節（L_HIP, R_HIP）を追加
+        evalJoints: ['L_SHOULDER', 'L_ELBOW', 'L_HIP', 'R_SHOULDER', 'R_ELBOW', 'R_HIP'], 
+        requiredStartPose: 'T_POSE', 
+        imageSrc: './images/jiman_pose_overlay.png', // 新しい画像
     },
 ];
 
@@ -198,7 +210,7 @@ export const TARGET_ANGLES = {
     OATH_L_SHOULDER: 120,   // 左腕 (腰に添える): 水平より少し下
     OATH_L_ELBOW: 90,       // 左腕 (腰に添える): 直角
     
-    // ★ 追加: FUSION_POSE の目標角度 (両腕共通)
+    // FUSION_POSE の目標角度 (両腕共通)
     FUSION_SHOULDER: 70,    // 肩: 水平より前に突き出す
     FUSION_ELBOW: 110,      // 肘: 大きく曲げる
 
@@ -206,6 +218,12 @@ export const TARGET_ANGLES = {
     UP_DOWN_L_ELBOW: 170,    // 左腕: まっすぐ
     UP_DOWN_R_SHOULDER: 140, // 右腕: 斜め下
     UP_DOWN_R_ELBOW: 170,    // 右腕: まっすぐ
+    
+    // ★ 追加: JIMAN_POSE の目標角度
+    JIMAN_SHOULDER: 120,     // 肩: 腰に手を当てるため、水平より少し下 (120度)
+    JIMAN_ELBOW: 90,         // 肘: 腰に手を当てるため、直角 (90度)
+    JIMAN_HIP: 175,          // 股関節: 体幹を真っ直ぐに維持 (175度)
+    JIMAN_TILT: 10,          // 体幹傾き: 垂直からの許容誤差 (10度)
 
 };
 
@@ -244,12 +262,15 @@ export const TOLERANCE = {
     // OATH_POSE の許容誤差
     OATH_TOLERANCE: 40, 
     
-    // ★ 追加: FUSION_POSE の許容誤差
+    // FUSION_POSE の許容誤差
     FUSION_TOLERANCE: 40, // 40度を設定
-    // ★ 追加: OATH_POSE の許容誤差
-    OATH_TOLERANCE: 40, // 40度を設定
     
     ASYM_UP_DOWN_TOLERANCE: 40,
+    
+    // ★ 追加: JIMAN_POSE の許容誤差
+    JIMAN_TOLERANCE: 40,     // 腕の関節角度の許容誤差
+    JIMAN_HIP_TOLERANCE: 15, // 股関節角度の許容誤差 (厳しめに設定)
+    JIMAN_TILT_TOLERANCE: 10, // 体幹の傾き許容誤差 (厳しめに設定)
 };
 
 export const LANDMARKS = LANDMARK_INDICES;
