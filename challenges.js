@@ -109,7 +109,7 @@ export const T_POSE_CHALLENGES = [
         requiredStartPose: 'T_POSE', 
         imageSrc: './images/surprise_pose_overlay.png', // 新しい画像 (仮)
     },
-    // ★ 追加: OATH_POSE
+    // 忠誠を誓う人ポーズ
     {
         id: 'OATH_POSE',
         name: "忠誠を誓う人ポーズ",
@@ -118,6 +118,16 @@ export const T_POSE_CHALLENGES = [
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
         requiredStartPose: 'T_POSE', 
         imageSrc: './images/oath_pose_overlay.png', // 新しい画像 (仮)
+    },
+    // ★ 追加: FUSION_POSE
+    {
+        id: 'FUSION_POSE',
+        name: "フュージョンポーズ",
+        message: "【T字スタート】両腕を体の前に突き出し、人差し指を近づけてポーズを維持してください。",
+        targetType: 'FUSION_ARMS', // 新しい評価タイプ
+        evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
+        requiredStartPose: 'T_POSE', 
+        imageSrc: './images/fusion_pose_overlay.png', // 新しい画像 (仮)
     },
 
     {
@@ -182,11 +192,15 @@ export const TARGET_ANGLES = {
     SURPRISE_SHOULDER: 100, // 肩: 水平より少し上
     SURPRISE_ELBOW: 60,     // 肘: かなり曲げる
     
-    // ★ 追加: OATH_POSE の目標角度
+    // OATH_POSE の目標角度
     OATH_R_SHOULDER: 90,    // 右腕 (突き出し): 水平
     OATH_R_ELBOW: 170,      // 右腕 (突き出し): ほぼまっすぐ
     OATH_L_SHOULDER: 120,   // 左腕 (腰に添える): 水平より少し下
     OATH_L_ELBOW: 90,       // 左腕 (腰に添える): 直角
+    
+    // ★ 追加: FUSION_POSE の目標角度 (両腕共通)
+    FUSION_SHOULDER: 70,    // 肩: 水平より前に突き出す
+    FUSION_ELBOW: 110,      // 肘: 大きく曲げる
 
     UP_DOWN_L_SHOULDER: 170, // 左腕: 垂直
     UP_DOWN_L_ELBOW: 170,    // 左腕: まっすぐ
@@ -227,6 +241,11 @@ export const TOLERANCE = {
     // SURPRISE_POSE の許容誤差
     SURPRISE_TOLERANCE: 40, 
     
+    // OATH_POSE の許容誤差
+    OATH_TOLERANCE: 40, 
+    
+    // ★ 追加: FUSION_POSE の許容誤差
+    FUSION_TOLERANCE: 40, // 40度を設定
     // ★ 追加: OATH_POSE の許容誤差
     OATH_TOLERANCE: 40, // 40度を設定
     

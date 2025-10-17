@@ -532,7 +532,7 @@ function calculateMatchScore(currentLandmarks) {
         }
     }
     
-    // ★ 11. ASYM_OATH_ARMS (忠誠を誓う人ポーズ) の評価ロジック (追加)
+    // ★ 11. ASYM_OATH_ARMS (忠誠を誓う人ポーズ) の評価ロジック
     else if (challenge.targetType === 'ASYM_OATH_ARMS') {
         const T = target;
         const OATH_TOL = tolerance.OATH_TOLERANCE; // 40度を使用
@@ -572,7 +572,40 @@ function calculateMatchScore(currentLandmarks) {
         // L_ELBOW: 直角 (90度)
         const leftElbowAngle = calculateAngle(currentLandmarks[L.LEFT_SHOULDER], currentLandmarks[L.LEFT_ELBOW], currentLandmarks[L.LEFT_WRIST]);
         totalScore += calculateScore(leftElbowAngle, T.OATH_L_ELBOW, OATH_TOL);
-        jointCount += 2;
+        jointCount++; // 2ではなく1を加算。合計4つの関節評価
+    }
+    
+    // ★ 12. FUSION_ARMS (フュージョンポーズ) の評価ロジック (追加)
+    else if (challenge.targetType === 'FUSION_ARMS') {
+        const sides = ['LEFT', 'RIGHT'];
+        const T = target;
+        const FUSION_TOL = tolerance.FUSION_TOLERANCE; 
+        const FUSION_VISIBILITY_THRESHOLD = VISIBILITY_THRESHOLD; 
+        
+        for (const side of sides) {
+            const S = L[`${side}_SHOULDER`];
+            const E = L[`${side}_ELBOW`];
+            const H = L[`${side}_HIP`];
+            const W = L[`${side}_WRIST`]; 
+            
+            // 必須ランドマークの可視性チェック
+            if (!currentLandmarks[S] || !currentLandmarks[E] || !currentLandmarks[H] || !currentLandmarks[W] ||
+                currentLandmarks[S].visibility < FUSION_VISIBILITY_THRESHOLD ||
+                currentLandmarks[E].visibility < FUSION_VISIBILITY_THRESHOLD ||
+                currentLandmarks[W].visibility < FUSION_VISIBILITY_THRESHOLD) { 
+                return 0; 
+            }
+            
+            // 肩の角度 (腰-肩-肘)
+            const currentShoulderAngle = calculateAngle(currentLandmarks[H], currentLandmarks[S], currentLandmarks[E]);
+            totalScore += calculateScore(currentShoulderAngle, T.FUSION_SHOULDER, FUSION_TOL);
+            jointCount++;
+
+            // 肘の角度 (肩-肘-手首)
+            const currentElbowAngle = calculateAngle(currentLandmarks[S], currentLandmarks[E], currentLandmarks[W]);
+            totalScore += calculateScore(currentElbowAngle, T.FUSION_ELBOW, FUSION_TOL);
+            jointCount++;
+        }
     }
     
     else if (challenge.targetType === 'ASYM_ARMS_UP_DOWN') {
