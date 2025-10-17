@@ -89,7 +89,7 @@ export const T_POSE_CHALLENGES = [
         requiredStartPose: 'T_POSE', 
         imageSrc: './images/archery_pose_overlay.png', // 新しい画像 (仮)
     },
-    // SALUTE_POSE
+    // ★ 追加: SALUTE_POSE
     {
         id: 'SALUTE_POSE',
         name: "敬礼ポーズ",
@@ -108,6 +108,26 @@ export const T_POSE_CHALLENGES = [
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
         requiredStartPose: 'T_POSE', 
         imageSrc: './images/left_arm_up_right_arm_down_overlay.png', // 新しい画像 (仮)
+    },
+    // びっくりした人ポーズ
+    {
+        id: 'SURPRISE_POSE',
+        name: "びっくりした人ポーズ",
+        message: "【T字スタート】両腕を水平より少し上に上げ、肘を曲げて手のひらを頭の横に近づけるポーズを維持してください。",
+        targetType: 'SURPRISE_ARMS', // 新しい評価タイプ
+        evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
+        requiredStartPose: 'T_POSE', 
+        imageSrc: './images/surprise_pose_overlay.png', // 新しい画像 (仮)
+    },
+    // ★ 追加: OATH_POSE
+    {
+        id: 'OATH_POSE',
+        name: "忠誠を誓う人ポーズ",
+        message: "【T字スタート】右腕を前方に、左腕を腰に添えるポーズを維持してください。",
+        targetType: 'ASYM_OATH_ARMS', // 新しい評価タイプ
+        evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
+        requiredStartPose: 'T_POSE', 
+        imageSrc: './images/oath_pose_overlay.png', // 新しい画像 (仮)
     },
 ];
 
@@ -157,12 +177,6 @@ export const TARGET_ANGLES = {
     SALUTE_R_ELBOW: 50,     // 敬礼腕: 鋭角に曲げる
     SALUTE_L_SHOULDER: 175, // 下げ腕: ほぼまっすぐ下
     SALUTE_L_ELBOW: 170,    // 下げ腕: ほぼまっすぐ
-    
-    // ASYM_ARMS_UP_DOWN の目標角度
-    UP_DOWN_L_SHOULDER: 170, // 左腕: 垂直
-    UP_DOWN_L_ELBOW: 170,    // 左腕: まっすぐ
-    UP_DOWN_R_SHOULDER: 140, // 右腕: 斜め下
-    UP_DOWN_R_ELBOW: 170,    // 右腕: まっすぐ
 };
 
 export const TOLERANCE = {
@@ -194,9 +208,6 @@ export const TOLERANCE = {
     
     // SALUTE_POSE の許容誤差
     SALUTE_TOLERANCE: 50,
-    
-    // ★ 最終変更点: ASYM_ARMS_UP_DOWN の許容誤差を 90 度に緩和
-    ASYM_UP_DOWN_TOLERANCE: 60,
 };
 
 export const LANDMARKS = LANDMARK_INDICES;
