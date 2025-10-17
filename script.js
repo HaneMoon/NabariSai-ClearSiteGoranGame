@@ -1081,6 +1081,21 @@ function onResults(results) {
                 // チャレンジリストが確定したら、準備フェーズを開始
                 if (CURRENT_CHALLENGES.length > 0) {
                     currentChallengeIndex = 0;
+                    
+                    const firstChallenge = CURRENT_CHALLENGES[0];
+                    
+                    // ★ 修正点: resetChallenge(false) の呼び出しを削除し、
+                    // ★ 画像設定と準備フェーズの開始をここで直接行う
+                    
+                    // 1. 画像の設定をここで直接行う
+                    if (overlayImageElement && firstChallenge.imageSrc) {
+                        overlayImageElement.src = firstChallenge.imageSrc;
+                        overlayImageElement.style.display = 'block';
+                    } else if (overlayImageElement) {
+                         overlayImageElement.style.display = 'none';
+                    }
+                    
+                    // 2. 準備フェーズへ移行
                     startPreparationPhase();
                 }
             }
