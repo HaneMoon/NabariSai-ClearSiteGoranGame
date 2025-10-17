@@ -46,7 +46,7 @@ export const T_POSE_CHALLENGES = [
         targetType: 'L_SHAPE_ARMS', 
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'],
         requiredStartPose: 'T_POSE', 
-        imageSrc: './images/2ArmsL_pose_overlay.png', 
+        imageSrc: './images/please_pose/両腕L字.png', 
     },
     // 剣を構えるポーズ (右腕のみ判定に変更)
     {
@@ -57,7 +57,7 @@ export const T_POSE_CHALLENGES = [
         // 評価対象: 右肩と右肘のみに限定
         evalJoints: ['R_SHOULDER', 'R_ELBOW'], 
         requiredStartPose: 'T_POSE',
-        imageSrc: './images/sword_pose_overlay.png', 
+        imageSrc: './images/please_pose/右手上げ.png', 
     },
     // 剣の握りポーズ
     {
@@ -67,7 +67,7 @@ export const T_POSE_CHALLENGES = [
         targetType: 'SWORD_GRIP', // 新しい評価タイプ
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], // 両肩と両肘
         requiredStartPose: 'T_POSE', 
-        imageSrc: './images/kawaii_pose_overlay.png', // 新しい画像 (仮)
+        imageSrc: './images/please_pose/両手剣.png', // 新しい画像 (仮)
     },
     // 頭上での屈曲ポーズ
     {
@@ -77,7 +77,7 @@ export const T_POSE_CHALLENGES = [
         targetType: 'SIDE_BEND_ARMS', // 新しい評価タイプ
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
         requiredStartPose: 'T_POSE', 
-        imageSrc: './images/kawaii_pose_overlay.png', // 新しい画像 (仮)
+        imageSrc: './images/please_pose/頭上光線.png', // 新しい画像 (仮)
     },
     // ARCHERY_POSE
     {
@@ -87,7 +87,7 @@ export const T_POSE_CHALLENGES = [
         targetType: 'ASYM_ARCHERY_ARMS', // 新しい評価タイプ
         evalJoints: ['L_SHOULULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
         requiredStartPose: 'T_POSE', 
-        imageSrc: './images/pose/Bow.png', // 新しい画像 (仮)
+        imageSrc: './images/please_pose/弓引き.png', // 新しい画像 (仮)
     },
     // 敬礼ポーズ
     {
@@ -97,7 +97,7 @@ export const T_POSE_CHALLENGES = [
         targetType: 'ASYM_SALUTE_ARMS', // 新しい評価タイプ
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
         requiredStartPose: 'T_POSE', 
-        imageSrc: './images/keirei_pose_overlay.png', 
+        imageSrc: './images/please_pose/敬礼.png', // 新しい画像 (仮)
     },
     // びっくりした人ポーズ
     {
@@ -107,7 +107,7 @@ export const T_POSE_CHALLENGES = [
         targetType: 'SURPRISE_ARMS', // 新しい評価タイプ
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
         requiredStartPose: 'T_POSE', 
-        imageSrc: './images/surprise_pose_overlay.png', // 新しい画像 (仮)
+        imageSrc: './images/please_pose/びっくり.png', // 新しい画像 (仮)
     },
     // 忠誠を誓う人ポーズ
     {
@@ -137,7 +137,7 @@ export const T_POSE_CHALLENGES = [
         targetType: 'ASYM_ARMS_UP_DOWN', // 新しい評価タイプ
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
         requiredStartPose: 'T_POSE', 
-        imageSrc: './images/pose/Kpose.png', // 新しい画像 (仮)
+        imageSrc: './images/please_pose/非対称の片腕.png', // 新しい画像 (仮)
     },
     
     // ★ 追加: 自慢する人ポーズ
@@ -149,7 +149,7 @@ export const T_POSE_CHALLENGES = [
         // 評価対象に股関節（L_HIP, R_HIP）を追加
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'L_HIP', 'R_SHOULDER', 'R_ELBOW', 'R_HIP'], 
         requiredStartPose: 'T_POSE', 
-        imageSrc: './images/jiman_pose_overlay.png', // 新しい画像
+        imageSrc: './images/please_pose/自慢.png', // 新しい画像
     },
 ];
 

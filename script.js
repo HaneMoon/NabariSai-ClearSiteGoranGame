@@ -536,25 +536,23 @@ function calculateMatchScore(currentLandmarks) {
     else if (challenge.targetType === 'ASYM_OATH_ARMS') {
         const T = target;
         const OATH_TOL = tolerance.OATH_TOLERANCE; // 40度を使用
-        const OATH_VISIBILITY_THRESHOLD = VISIBILITY_THRESHOLD; 
-        
-        let isLeftArmVisible = currentLandmarks[L.LEFT_SHOULDER] && currentLandmarks[L.LEFT_ELBOW] && currentLandmarks[L.LEFT_WRIST] && currentLandmarks[L.LEFT_HIP] &&
-                                currentLandmarks[L.LEFT_SHOULDER].visibility > OATH_VISIBILITY_THRESHOLD &&
-                                currentLandmarks[L.LEFT_ELBOW].visibility > OATH_VISIBILITY_THRESHOLD &&
-                                currentLandmarks[L.LEFT_WRIST].visibility > OATH_VISIBILITY_THRESHOLD;
+        const OATH_VISIBILITY_THRESHOLD = VISIBILITY_THRESHOLD; // 0.5 を使用
+        const H_R = L.RIGHT_HIP, H_L = L.LEFT_HIP; // 腰のランドマーク
 
-        let isRightArmVisible = currentLandmarks[L.RIGHT_SHOULDER] && currentLandmarks[L.RIGHT_ELBOW] && currentLandmarks[L.RIGHT_WRIST] && currentLandmarks[L.RIGHT_HIP] &&
-                                currentLandmarks[L.RIGHT_SHOULDER].visibility > OATH_VISIBILITY_THRESHOLD &&
-                                currentLandmarks[L.RIGHT_ELBOW].visibility > OATH_VISIBILITY_THRESHOLD &&
-                                currentLandmarks[L.RIGHT_WRIST].visibility > OATH_VISIBILITY_THRESHOLD;
+        // 必須ランドマークの可視性チェック (左右の主要ランドマークをチェック)
+        const isVisible = currentLandmarks[L.RIGHT_SHOULDER]?.visibility > OATH_VISIBILITY_THRESHOLD &&
+                          currentLandmarks[L.LEFT_SHOULDER]?.visibility > OATH_VISIBILITY_THRESHOLD &&
+                          currentLandmarks[L.RIGHT_WRIST]?.visibility > OATH_VISIBILITY_THRESHOLD &&
+                          currentLandmarks[L.LEFT_WRIST]?.visibility > OATH_VISIBILITY_THRESHOLD;
         
-        if (!isLeftArmVisible || !isRightArmVisible) {
+        if (!isVisible) {
             return 0;
         }
 
-        // --- 右腕 (突き出し側) の判定 ---
+        // --- 1. 右腕 (突き出し側) の角度評価 (R_SHOULDER: 90, R_ELBOW: 170) ---
+        
         // R_SHOULDER: 水平 (90度)
-        const rightShoulderAngle = calculateAngle(currentLandmarks[L.RIGHT_HIP], currentLandmarks[L.RIGHT_SHOULDER], currentLandmarks[L.RIGHT_ELBOW]);
+        const rightShoulderAngle = calculateAngle(currentLandmarks[H_R], currentLandmarks[L.RIGHT_SHOULDER], currentLandmarks[L.RIGHT_ELBOW]);
         totalScore += calculateScore(rightShoulderAngle, T.OATH_R_SHOULDER, OATH_TOL);
         jointCount++;
         
@@ -563,16 +561,34 @@ function calculateMatchScore(currentLandmarks) {
         totalScore += calculateScore(rightElbowAngle, T.OATH_R_ELBOW, OATH_TOL);
         jointCount++;
 
-        // --- 左腕 (腰に添える側) の判定 ---
+        // --- 2. 左腕 (腰に添える側) の角度評価 (L_SHOULDER: 120, L_ELBOW: 90) ---
+        
         // L_SHOULDER: 水平より少し下 (120度)
-        const leftShoulderAngle = calculateAngle(currentLandmarks[L.LEFT_HIP], currentLandmarks[L.LEFT_SHOULDER], currentLandmarks[L.LEFT_ELBOW]);
+        const leftShoulderAngle = calculateAngle(currentLandmarks[H_L], currentLandmarks[L.LEFT_SHOULDER], currentLandmarks[L.LEFT_ELBOW]);
         totalScore += calculateScore(leftShoulderAngle, T.OATH_L_SHOULDER, OATH_TOL);
         jointCount++;
         
         // L_ELBOW: 直角 (90度)
         const leftElbowAngle = calculateAngle(currentLandmarks[L.LEFT_SHOULDER], currentLandmarks[L.LEFT_ELBOW], currentLandmarks[L.LEFT_WRIST]);
         totalScore += calculateScore(leftElbowAngle, T.OATH_L_ELBOW, OATH_TOL);
-        jointCount++; // 2ではなく1を加算。合計4つの関節評価
+        jointCount++;
+
+        // --- 3. 左腕の空間的制約評価 (手首が腰の近くにあるか) ---
+        
+        // 左手首 (L.LEFT_WRIST) が左腰 (L.LEFT_HIP) に近いか
+        const wristToHipDist = calculateDistance(currentLandmarks[L.LEFT_WRIST], currentLandmarks[H_L]).totalDistance;
+        // 腕の長さ (肩から肘) を正規化の基準とする
+        const armLength = calculateDistance(currentLandmarks[L.LEFT_SHOULDER], currentLandmarks[L.LEFT_ELBOW]).totalDistance;
+
+        // 許容される距離 (腕の長さの約 20% まで) 
+        const maxAllowedDistance = armLength * 0.20; 
+
+        // 距離が近ければ近いほどスコアが高い
+        const distanceScore = 100 * (1 - (wristToHipDist / maxAllowedDistance));
+        
+        // スコアを合算する (ただし、許容範囲内である必要がある)
+        totalScore += Math.max(0, Math.min(100, distanceScore));
+        jointCount++;
     }
     
     // 12. FUSION_ARMS (フュージョンポーズ) の評価ロジック (追加)
