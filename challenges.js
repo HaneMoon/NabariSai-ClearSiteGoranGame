@@ -89,7 +89,7 @@ export const T_POSE_CHALLENGES = [
         requiredStartPose: 'T_POSE', 
         imageSrc: './images/archery_pose_overlay.png', // 新しい画像 (仮)
     },
-    // ★ 追加: SALUTE_POSE
+    // 敬礼ポーズ
     {
         id: 'SALUTE_POSE',
         name: "敬礼ポーズ",
@@ -99,7 +99,7 @@ export const T_POSE_CHALLENGES = [
         requiredStartPose: 'T_POSE', 
         imageSrc: './images/keirei_pose_overlay.png', 
     },
-    // ★ 追加: SURPRISE_POSE
+    // びっくりした人ポーズ
     {
         id: 'SURPRISE_POSE',
         name: "びっくりした人ポーズ",
@@ -108,6 +108,16 @@ export const T_POSE_CHALLENGES = [
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
         requiredStartPose: 'T_POSE', 
         imageSrc: './images/surprise_pose_overlay.png', // 新しい画像 (仮)
+    },
+    // ★ 追加: OATH_POSE
+    {
+        id: 'OATH_POSE',
+        name: "忠誠を誓う人ポーズ",
+        message: "【T字スタート】右腕を前方に、左腕を腰に添えるポーズを維持してください。",
+        targetType: 'ASYM_OATH_ARMS', // 新しい評価タイプ
+        evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
+        requiredStartPose: 'T_POSE', 
+        imageSrc: './images/oath_pose_overlay.png', // 新しい画像 (仮)
     },
 ];
 
@@ -152,15 +162,21 @@ export const TARGET_ANGLES = {
     ARCHERY_L_SHOULDER: 90,  
     ARCHERY_L_ELBOW: 170,    
     
-    // ★ 追加: SALUTE_POSE の目標角度
+    // SALUTE_POSE の目標角度
     SALUTE_R_SHOULDER: 100, // 敬礼腕: 水平より少し上
     SALUTE_R_ELBOW: 50,     // 敬礼腕: 鋭角に曲げる
     SALUTE_L_SHOULDER: 175, // 下げ腕: ほぼまっすぐ下
     SALUTE_L_ELBOW: 170,    // 下げ腕: ほぼまっすぐ
 
-    // ★ 追加: SURPRISE_POSE の目標角度 (両腕共通)
+    // SURPRISE_POSE の目標角度 (両腕共通)
     SURPRISE_SHOULDER: 100, // 肩: 水平より少し上
     SURPRISE_ELBOW: 60,     // 肘: かなり曲げる
+    
+    // ★ 追加: OATH_POSE の目標角度
+    OATH_R_SHOULDER: 90,    // 右腕 (突き出し): 水平
+    OATH_R_ELBOW: 170,      // 右腕 (突き出し): ほぼまっすぐ
+    OATH_L_SHOULDER: 120,   // 左腕 (腰に添える): 水平より少し下
+    OATH_L_ELBOW: 90,       // 左腕 (腰に添える): 直角
 };
 
 export const TOLERANCE = {
@@ -189,11 +205,14 @@ export const TOLERANCE = {
     // ARCHERY_POSE の許容誤差
     ARCHERY_TOLERANCE: 60,
     
-    // ★ 変更: SALUTE_POSE の許容誤差を 30 から 50 に緩和
+    // SALUTE_POSE の許容誤差
     SALUTE_TOLERANCE: 50,
     
-    // ★ 追加: SURPRISE_POSE の許容誤差
-    SURPRISE_TOLERANCE: 40, // 40度を設定 (少し緩めに)
+    // SURPRISE_POSE の許容誤差
+    SURPRISE_TOLERANCE: 40, 
+    
+    // ★ 追加: OATH_POSE の許容誤差
+    OATH_TOLERANCE: 40, // 40度を設定
 };
 
 export const LANDMARKS = LANDMARK_INDICES;

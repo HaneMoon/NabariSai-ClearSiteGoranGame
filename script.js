@@ -499,7 +499,7 @@ function calculateMatchScore(currentLandmarks) {
         jointCount += 2;
     }
     
-    // ★ 10. SURPRISE_ARMS (びっくりした人ポーズ) の評価ロジック (追加)
+    // ★ 10. SURPRISE_ARMS (びっくりした人ポーズ) の評価ロジック
     else if (challenge.targetType === 'SURPRISE_ARMS') {
         const sides = ['LEFT', 'RIGHT'];
         const T = target;
@@ -530,6 +530,49 @@ function calculateMatchScore(currentLandmarks) {
             totalScore += calculateScore(currentElbowAngle, T.SURPRISE_ELBOW, SURPRISE_TOL);
             jointCount++;
         }
+    }
+    
+    // ★ 11. ASYM_OATH_ARMS (忠誠を誓う人ポーズ) の評価ロジック (追加)
+    else if (challenge.targetType === 'ASYM_OATH_ARMS') {
+        const T = target;
+        const OATH_TOL = tolerance.OATH_TOLERANCE; // 40度を使用
+        const OATH_VISIBILITY_THRESHOLD = VISIBILITY_THRESHOLD; 
+        
+        let isLeftArmVisible = currentLandmarks[L.LEFT_SHOULDER] && currentLandmarks[L.LEFT_ELBOW] && currentLandmarks[L.LEFT_WRIST] && currentLandmarks[L.LEFT_HIP] &&
+                                currentLandmarks[L.LEFT_SHOULDER].visibility > OATH_VISIBILITY_THRESHOLD &&
+                                currentLandmarks[L.LEFT_ELBOW].visibility > OATH_VISIBILITY_THRESHOLD &&
+                                currentLandmarks[L.LEFT_WRIST].visibility > OATH_VISIBILITY_THRESHOLD;
+
+        let isRightArmVisible = currentLandmarks[L.RIGHT_SHOULDER] && currentLandmarks[L.RIGHT_ELBOW] && currentLandmarks[L.RIGHT_WRIST] && currentLandmarks[L.RIGHT_HIP] &&
+                                currentLandmarks[L.RIGHT_SHOULDER].visibility > OATH_VISIBILITY_THRESHOLD &&
+                                currentLandmarks[L.RIGHT_ELBOW].visibility > OATH_VISIBILITY_THRESHOLD &&
+                                currentLandmarks[L.RIGHT_WRIST].visibility > OATH_VISIBILITY_THRESHOLD;
+        
+        if (!isLeftArmVisible || !isRightArmVisible) {
+            return 0;
+        }
+
+        // --- 右腕 (突き出し側) の判定 ---
+        // R_SHOULDER: 水平 (90度)
+        const rightShoulderAngle = calculateAngle(currentLandmarks[L.RIGHT_HIP], currentLandmarks[L.RIGHT_SHOULDER], currentLandmarks[L.RIGHT_ELBOW]);
+        totalScore += calculateScore(rightShoulderAngle, T.OATH_R_SHOULDER, OATH_TOL);
+        jointCount++;
+        
+        // R_ELBOW: ほぼまっすぐ (170度)
+        const rightElbowAngle = calculateAngle(currentLandmarks[L.RIGHT_SHOULDER], currentLandmarks[L.RIGHT_ELBOW], currentLandmarks[L.RIGHT_WRIST]);
+        totalScore += calculateScore(rightElbowAngle, T.OATH_R_ELBOW, OATH_TOL);
+        jointCount++;
+
+        // --- 左腕 (腰に添える側) の判定 ---
+        // L_SHOULDER: 水平より少し下 (120度)
+        const leftShoulderAngle = calculateAngle(currentLandmarks[L.LEFT_HIP], currentLandmarks[L.LEFT_SHOULDER], currentLandmarks[L.LEFT_ELBOW]);
+        totalScore += calculateScore(leftShoulderAngle, T.OATH_L_SHOULDER, OATH_TOL);
+        jointCount++;
+        
+        // L_ELBOW: 直角 (90度)
+        const leftElbowAngle = calculateAngle(currentLandmarks[L.LEFT_SHOULDER], currentLandmarks[L.LEFT_ELBOW], currentLandmarks[L.LEFT_WRIST]);
+        totalScore += calculateScore(leftElbowAngle, T.OATH_L_ELBOW, OATH_TOL);
+        jointCount += 2;
     }
     
     // jointCountが0の場合にNaNを返すのを防ぐ
