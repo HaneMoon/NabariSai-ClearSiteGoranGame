@@ -33,7 +33,7 @@ export const VERTICAL_CHALLENGES = [
         targetType: 'ARM', 
         evalJoints: ['L_SHOULDER', 'L_ELBOW'],
         requiredStartPose: 'VERTICAL', 
-        imageSrc: './images/kawaii_pose_overlay.png', 
+        imageSrc: './images/LhandUP_pose_overlay.png', 
     },
 ];
 
@@ -46,7 +46,7 @@ export const T_POSE_CHALLENGES = [
         targetType: 'L_SHAPE_ARMS', 
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'],
         requiredStartPose: 'T_POSE', 
-        imageSrc: './images/kawaii_pose_overlay.png', 
+        imageSrc: './images/2ArmsL_pose_overlay.png', 
     },
     // 剣を構えるポーズ (右腕のみ判定に変更)
     {
@@ -67,7 +67,7 @@ export const T_POSE_CHALLENGES = [
         targetType: 'SWORD_GRIP', // 新しい評価タイプ
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], // 両肩と両肘
         requiredStartPose: 'T_POSE', 
-        imageSrc: './images/sword_grip_overlay.png', // 新しい画像 (仮)
+        imageSrc: './images/kawaii_pose_overlay.png', // 新しい画像 (仮)
     },
     // 頭上での屈曲ポーズ
     {
@@ -77,7 +77,7 @@ export const T_POSE_CHALLENGES = [
         targetType: 'SIDE_BEND_ARMS', // 新しい評価タイプ
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
         requiredStartPose: 'T_POSE', 
-        imageSrc: './images/high_side_bend_overlay.png', // 新しい画像 (仮)
+        imageSrc: './images/kawaii_pose_overlay.png', // 新しい画像 (仮)
     },
     // ARCHERY_POSE
     {
@@ -89,7 +89,7 @@ export const T_POSE_CHALLENGES = [
         requiredStartPose: 'T_POSE', 
         imageSrc: './images/archery_pose_overlay.png', // 新しい画像 (仮)
     },
-    // ★ 追加: SALUTE_POSE
+    // 敬礼ポーズ
     {
         id: 'SALUTE_POSE',
         name: "敬礼ポーズ",
@@ -97,17 +97,7 @@ export const T_POSE_CHALLENGES = [
         targetType: 'ASYM_SALUTE_ARMS', // 新しい評価タイプ
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
         requiredStartPose: 'T_POSE', 
-        imageSrc: './images/salute_pose_overlay.png', // 新しい画像 (仮)
-    },
-    // 非対称の片腕上げポーズ
-    {
-        id: 'LEFT_ARM_UP_RIGHT_ARM_DOWN',
-        name: "非対称の片腕上げポーズ",
-        message: "【T字スタート】左腕を垂直に上げ、右腕を斜め下に伸ばしてポーズを維持してください。",
-        targetType: 'ASYM_ARMS_UP_DOWN', // 新しい評価タイプ
-        evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
-        requiredStartPose: 'T_POSE', 
-        imageSrc: './images/left_arm_up_right_arm_down_overlay.png', // 新しい画像 (仮)
+        imageSrc: './images/keirei_pose_overlay.png', 
     },
     // びっくりした人ポーズ
     {
@@ -128,6 +118,16 @@ export const T_POSE_CHALLENGES = [
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
         requiredStartPose: 'T_POSE', 
         imageSrc: './images/oath_pose_overlay.png', // 新しい画像 (仮)
+    },
+
+    {
+        id: 'LEFT_ARM_UP_RIGHT_ARM_DOWN',
+        name: "非対称の片腕上げポーズ",
+        message: "【T字スタート】左腕を垂直に上げ、右腕を斜め下に伸ばしてポーズを維持してください。",
+        targetType: 'ASYM_ARMS_UP_DOWN', // 新しい評価タイプ
+        evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
+        requiredStartPose: 'T_POSE', 
+        imageSrc: './images/left_arm_up_right_arm_down_overlay.png', // 新しい画像 (仮)
     },
 ];
 
@@ -177,6 +177,22 @@ export const TARGET_ANGLES = {
     SALUTE_R_ELBOW: 50,     // 敬礼腕: 鋭角に曲げる
     SALUTE_L_SHOULDER: 175, // 下げ腕: ほぼまっすぐ下
     SALUTE_L_ELBOW: 170,    // 下げ腕: ほぼまっすぐ
+
+    // SURPRISE_POSE の目標角度 (両腕共通)
+    SURPRISE_SHOULDER: 100, // 肩: 水平より少し上
+    SURPRISE_ELBOW: 60,     // 肘: かなり曲げる
+    
+    // ★ 追加: OATH_POSE の目標角度
+    OATH_R_SHOULDER: 90,    // 右腕 (突き出し): 水平
+    OATH_R_ELBOW: 170,      // 右腕 (突き出し): ほぼまっすぐ
+    OATH_L_SHOULDER: 120,   // 左腕 (腰に添える): 水平より少し下
+    OATH_L_ELBOW: 90,       // 左腕 (腰に添える): 直角
+
+    UP_DOWN_L_SHOULDER: 170, // 左腕: 垂直
+    UP_DOWN_L_ELBOW: 170,    // 左腕: まっすぐ
+    UP_DOWN_R_SHOULDER: 140, // 右腕: 斜め下
+    UP_DOWN_R_ELBOW: 170,    // 右腕: まっすぐ
+
 };
 
 export const TOLERANCE = {
@@ -194,7 +210,6 @@ export const TOLERANCE = {
     DASH_TOLERANCE: 30, 
 
     // SWORD_POSE の許容誤差
-   // SWORD_POSE の許容誤差
     SWORD_TOLERANCE: 30, 
     
     // SWORD_GRIP_POSE の許容誤差
@@ -208,6 +223,14 @@ export const TOLERANCE = {
     
     // SALUTE_POSE の許容誤差
     SALUTE_TOLERANCE: 50,
+    
+    // SURPRISE_POSE の許容誤差
+    SURPRISE_TOLERANCE: 40, 
+    
+    // ★ 追加: OATH_POSE の許容誤差
+    OATH_TOLERANCE: 40, // 40度を設定
+    
+    ASYM_UP_DOWN_TOLERANCE: 40,
 };
 
 export const LANDMARKS = LANDMARK_INDICES;

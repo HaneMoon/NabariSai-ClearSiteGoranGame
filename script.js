@@ -498,46 +498,6 @@ function calculateMatchScore(currentLandmarks) {
         totalScore += calculateScore(leftElbowAngle, T.SALUTE_L_ELBOW, SALUTE_TOL);
         jointCount += 2;
     }
-
-    else if (challenge.targetType === 'ASYM_ARMS_UP_DOWN') {
-        const T = target;
-        const UP_DOWN_TOL = tolerance.ASYM_UP_DOWN_TOLERANCE;
-        const VISIBILITY = VISIBILITY_THRESHOLD; 
-        
-        let isLeftArmVisible = currentLandmarks[L.LEFT_SHOULDER] && currentLandmarks[L.LEFT_ELBOW] && currentLandmarks[L.LEFT_WRIST] && currentLandmarks[L.LEFT_HIP] &&
-                                currentLandmarks[L.LEFT_SHOULDER].visibility > VISIBILITY &&
-                                currentLandmarks[L.LEFT_ELBOW].visibility > VISIBILITY &&
-                                currentLandmarks[L.LEFT_WRIST].visibility > VISIBILITY;
-
-        let isRightArmVisible = currentLandmarks[L.RIGHT_SHOULDER] && currentLandmarks[L.RIGHT_ELBOW] && currentLandmarks[L.RIGHT_WRIST] && currentLandmarks[L.RIGHT_HIP] &&
-                                currentLandmarks[L.RIGHT_SHOULDER].visibility > VISIBILITY &&
-                                currentLandmarks[L.RIGHT_ELBOW].visibility > VISIBILITY &&
-                                currentLandmarks[L.RIGHT_WRIST].visibility > VISIBILITY;
-        
-        if (!isLeftArmVisible || !isRightArmVisible) {
-            return 0;
-        }
-
-        // --- 左腕 (上げる側) の判定 ---
-        // 角度: L_HIP-L_SHOULDER-L_ELBOW (垂直に近い)
-        const leftShoulderAngle = calculateAngle(currentLandmarks[L.LEFT_HIP], currentLandmarks[L.LEFT_SHOULDER], currentLandmarks[L.LEFT_ELBOW]);
-        // 角度: L_SHOULDER-L_ELBOW-L_WRIST (まっすぐ)
-        const leftElbowAngle = calculateAngle(currentLandmarks[L.LEFT_SHOULDER], currentLandmarks[L.LEFT_ELBOW], currentLandmarks[L.LEFT_WRIST]);
-        
-        totalScore += calculateScore(leftShoulderAngle, T.UP_DOWN_L_SHOULDER, UP_DOWN_TOL);
-        totalScore += calculateScore(leftElbowAngle, T.UP_DOWN_L_ELBOW, UP_DOWN_TOL);
-        jointCount += 2;
-
-        // --- 右腕 (下げる側) の判定 ---
-        // 角度: R_HIP-R_SHOULDER-R_ELBOW (斜め下)
-        const rightShoulderAngle = calculateAngle(currentLandmarks[L.RIGHT_HIP], currentLandmarks[L.RIGHT_SHOULDER], currentLandmarks[L.RIGHT_ELBOW]);
-        // 角度: R_SHOULDER-R_ELBOW-R_WRIST (まっすぐ)
-        const rightElbowAngle = calculateAngle(currentLandmarks[L.RIGHT_SHOULDER], currentLandmarks[L.RIGHT_ELBOW], currentLandmarks[L.RIGHT_WRIST]);
-        
-        totalScore += calculateScore(rightShoulderAngle, T.UP_DOWN_R_SHOULDER, UP_DOWN_TOL);
-        totalScore += calculateScore(rightElbowAngle, T.UP_DOWN_R_ELBOW, UP_DOWN_TOL);
-        jointCount += 2;
-    }
     
     // ★ 10. SURPRISE_ARMS (びっくりした人ポーズ) の評価ロジック
     else if (challenge.targetType === 'SURPRISE_ARMS') {
@@ -615,6 +575,46 @@ function calculateMatchScore(currentLandmarks) {
         jointCount += 2;
     }
     
+    else if (challenge.targetType === 'ASYM_ARMS_UP_DOWN') {
+        const T = target;
+        const UP_DOWN_TOL = tolerance.ASYM_UP_DOWN_TOLERANCE;
+        const VISIBILITY = VISIBILITY_THRESHOLD; 
+        
+        let isLeftArmVisible = currentLandmarks[L.LEFT_SHOULDER] && currentLandmarks[L.LEFT_ELBOW] && currentLandmarks[L.LEFT_WRIST] && currentLandmarks[L.LEFT_HIP] &&
+                                currentLandmarks[L.LEFT_SHOULDER].visibility > VISIBILITY &&
+                                currentLandmarks[L.LEFT_ELBOW].visibility > VISIBILITY &&
+                                currentLandmarks[L.LEFT_WRIST].visibility > VISIBILITY;
+
+        let isRightArmVisible = currentLandmarks[L.RIGHT_SHOULDER] && currentLandmarks[L.RIGHT_ELBOW] && currentLandmarks[L.RIGHT_WRIST] && currentLandmarks[L.RIGHT_HIP] &&
+                                currentLandmarks[L.RIGHT_SHOULDER].visibility > VISIBILITY &&
+                                currentLandmarks[L.RIGHT_ELBOW].visibility > VISIBILITY &&
+                                currentLandmarks[L.RIGHT_WRIST].visibility > VISIBILITY;
+        
+        if (!isLeftArmVisible || !isRightArmVisible) {
+            return 0;
+        }
+
+        // --- 左腕 (上げる側) の判定 ---
+        // 角度: L_HIP-L_SHOULDER-L_ELBOW (垂直に近い)
+        const leftShoulderAngle = calculateAngle(currentLandmarks[L.LEFT_HIP], currentLandmarks[L.LEFT_SHOULDER], currentLandmarks[L.LEFT_ELBOW]);
+        // 角度: L_SHOULDER-L_ELBOW-L_WRIST (まっすぐ)
+        const leftElbowAngle = calculateAngle(currentLandmarks[L.LEFT_SHOULDER], currentLandmarks[L.LEFT_ELBOW], currentLandmarks[L.LEFT_WRIST]);
+        
+        totalScore += calculateScore(leftShoulderAngle, T.UP_DOWN_L_SHOULDER, UP_DOWN_TOL);
+        totalScore += calculateScore(leftElbowAngle, T.UP_DOWN_L_ELBOW, UP_DOWN_TOL);
+        jointCount += 2;
+
+        // --- 右腕 (下げる側) の判定 ---
+        // 角度: R_HIP-R_SHOULDER-R_ELBOW (斜め下)
+        const rightShoulderAngle = calculateAngle(currentLandmarks[L.RIGHT_HIP], currentLandmarks[L.RIGHT_SHOULDER], currentLandmarks[L.RIGHT_ELBOW]);
+        // 角度: R_SHOULDER-R_ELBOW-R_WRIST (まっすぐ)
+        const rightElbowAngle = calculateAngle(currentLandmarks[L.RIGHT_SHOULDER], currentLandmarks[L.RIGHT_ELBOW], currentLandmarks[L.RIGHT_WRIST]);
+        
+        totalScore += calculateScore(rightShoulderAngle, T.UP_DOWN_R_SHOULDER, UP_DOWN_TOL);
+        totalScore += calculateScore(rightElbowAngle, T.UP_DOWN_R_ELBOW, UP_DOWN_TOL);
+        jointCount += 2;
+    }
+
     // jointCountが0の場合にNaNを返すのを防ぐ
     if (jointCount === 0) return 0;
     
