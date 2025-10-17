@@ -77,7 +77,7 @@ export const T_POSE_CHALLENGES = [
         targetType: 'SIDE_BEND_ARMS', // 新しい評価タイプ
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
         requiredStartPose: 'T_POSE', 
-        // imageSrc: './images/please_pose/頭上光線.png', // 新しい画像 (仮)
+        imageSrc: './images/posePikt/光線.png', // 新しい画像 (仮)
     },
     // ARCHERY_POSE
     {
@@ -149,7 +149,7 @@ export const T_POSE_CHALLENGES = [
         // 評価対象に股関節（L_HIP, R_HIP）を追加
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'L_HIP', 'R_SHOULDER', 'R_ELBOW', 'R_HIP'], 
         requiredStartPose: 'T_POSE', 
-        imageSrc: './images/please_pose/自慢.png', // 新しい画像
+        imageSrc: './images/posePikt/自慢.png', // 新しい画像
     },
 ];
 
