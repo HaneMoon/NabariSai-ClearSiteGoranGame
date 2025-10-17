@@ -260,12 +260,12 @@ export const TOLERANCE = {
     SURPRISE_TOLERANCE: 40, 
     
     // OATH_POSE の許容誤差
-    OATH_TOLERANCE: 40, 
+    OATH_TOLERANCE: 60, 
     
     // FUSION_POSE の許容誤差
     FUSION_TOLERANCE: 40, // 40度を設定
     
-    ASYM_UP_DOWN_TOLERANCE: 40,
+    ASYM_UP_DOWN_TOLERANCE: 120,
     
     // ★ 追加: JIMAN_POSE の許容誤差
     JIMAN_TOLERANCE: 40,     // 腕の関節角度の許容誤差

@@ -47,8 +47,8 @@ h1 {
     display: none; 
 }
 
-/* キャンバスと画像の両方に共通する重ね合わせ設定 */
-#canvas, #challenge-pose-overlay {
+/* 1. 全要素の基本設定 (配置とサイズ) */
+#canvas, #challenge-pose-overlay, #video {
     position: absolute; 
     top: 0;
     left: 0;
@@ -60,16 +60,18 @@ h1 {
     aspect-ratio: 4 / 3; 
 }
 
-/* ★ 修正点1: キャンバスはユーザーに見やすくするため左右反転を維持 */
+
+/* 2. キャンバス (骨格線) は左右反転を維持 */
 #canvas {
+    z-index: 5; 
     transform: scaleX(-1); 
 }
 
-/* ★ 修正点2: オーバーレイ画像は正しい向きで表示するため、反転を削除 */
+/* 3. ★ 修正点: オーバーレイ画像も左右反転させる（鏡像） */
 #challenge-pose-overlay {
-    z-index: 10; /* キャンバスの上に表示 */
-    opacity: 0.7; /* 透過させて、ユーザーの姿が見えるようにする */
-    /* 以前あった transform: scaleX(-1); を削除 */
+    z-index: 10; 
+    opacity: 0.7; 
+    transform: scaleX(-1); /* 左右反転を再適用 */
 }
 
 

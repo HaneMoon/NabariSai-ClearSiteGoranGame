@@ -22,6 +22,9 @@ const timerDisplayElement = document.getElementById('timer-display');
 const currentChallengeNameElement = document.getElementById('current-challenge-name');
 const debugStartButton = document.getElementById('debug-start-button');
 const overlayImageElement = document.getElementById('challenge-pose-overlay'); 
+// script.js 内のグローバル定数と初期化部分
+
+// ... (中略)
 
 canvasElement.width = 640;
 canvasElement.height = 480;
@@ -535,8 +538,9 @@ function calculateMatchScore(currentLandmarks) {
     // 11. ASYM_OATH_ARMS (忠誠を誓う人ポーズ) の評価ロジック
     else if (challenge.targetType === 'ASYM_OATH_ARMS') {
         const T = target;
-        const OATH_TOL = tolerance.OATH_TOLERANCE; // 40度を使用
-        const OATH_VISIBILITY_THRESHOLD = VISIBILITY_THRESHOLD; // 0.5 を使用
+        // OATH_TOL は challenges.js から取得 (現在は 40)
+        const OATH_TOL = tolerance.OATH_TOLERANCE; 
+        const OATH_VISIBILITY_THRESHOLD = VISIBILITY_THRESHOLD; 
         const H_R = L.RIGHT_HIP, H_L = L.LEFT_HIP; // 腰のランドマーク
 
         // 必須ランドマークの可視性チェック (左右の主要ランドマークをチェック)
@@ -549,39 +553,42 @@ function calculateMatchScore(currentLandmarks) {
             return 0;
         }
 
-        // --- 1. 右腕 (突き出し側) の角度評価 (R_SHOULDER: 90, R_ELBOW: 170) ---
-        
-        // R_SHOULDER: 水平 (90度)
-        const rightShoulderAngle = calculateAngle(currentLandmarks[H_R], currentLandmarks[L.RIGHT_SHOULDER], currentLandmarks[L.RIGHT_ELBOW]);
-        totalScore += calculateScore(rightShoulderAngle, T.OATH_R_SHOULDER, OATH_TOL);
-        jointCount++;
-        
-        // R_ELBOW: ほぼまっすぐ (170度)
-        const rightElbowAngle = calculateAngle(currentLandmarks[L.RIGHT_SHOULDER], currentLandmarks[L.RIGHT_ELBOW], currentLandmarks[L.RIGHT_WRIST]);
-        totalScore += calculateScore(rightElbowAngle, T.OATH_R_ELBOW, OATH_TOL);
-        jointCount++;
+        // ★ 修正点1: 左右の目標を入れ替える
+        // ユーザーのポーズ: 左腕=突き出し (目標: R_SHOULDER: 90), 右腕=腰に添える (目標: L_SHOULDER: 120)
 
-        // --- 2. 左腕 (腰に添える側) の角度評価 (L_SHOULDER: 120, L_ELBOW: 90) ---
+        // --- 1. 左腕 (突き出し側) の角度評価 (目標: R_SHOULDER: 90, R_ELBOW: 170) ---
         
-        // L_SHOULDER: 水平より少し下 (120度)
+        // L_SHOULDER: 水平 (90度)
         const leftShoulderAngle = calculateAngle(currentLandmarks[H_L], currentLandmarks[L.LEFT_SHOULDER], currentLandmarks[L.LEFT_ELBOW]);
-        totalScore += calculateScore(leftShoulderAngle, T.OATH_L_SHOULDER, OATH_TOL);
+        totalScore += calculateScore(leftShoulderAngle, T.OATH_R_SHOULDER, OATH_TOL); // OATH_R_SHOULDERの目標を使用
         jointCount++;
         
-        // L_ELBOW: 直角 (90度)
+        // L_ELBOW: ほぼまっすぐ (170度)
         const leftElbowAngle = calculateAngle(currentLandmarks[L.LEFT_SHOULDER], currentLandmarks[L.LEFT_ELBOW], currentLandmarks[L.LEFT_WRIST]);
-        totalScore += calculateScore(leftElbowAngle, T.OATH_L_ELBOW, OATH_TOL);
+        totalScore += calculateScore(leftElbowAngle, T.OATH_R_ELBOW, OATH_TOL); // OATH_R_ELBOWの目標を使用
         jointCount++;
 
-        // --- 3. 左腕の空間的制約評価 (手首が腰の近くにあるか) ---
+        // --- 2. 右腕 (腰に添える側) の角度評価 (目標: L_SHOULDER: 120, L_ELBOW: 90) ---
         
-        // 左手首 (L.LEFT_WRIST) が左腰 (L.LEFT_HIP) に近いか
-        const wristToHipDist = calculateDistance(currentLandmarks[L.LEFT_WRIST], currentLandmarks[H_L]).totalDistance;
-        // 腕の長さ (肩から肘) を正規化の基準とする
-        const armLength = calculateDistance(currentLandmarks[L.LEFT_SHOULDER], currentLandmarks[L.LEFT_ELBOW]).totalDistance;
+        // R_SHOULDER: 水平より少し下 (120度)
+        const rightShoulderAngle = calculateAngle(currentLandmarks[H_R], currentLandmarks[L.RIGHT_SHOULDER], currentLandmarks[L.RIGHT_ELBOW]);
+        totalScore += calculateScore(rightShoulderAngle, T.OATH_L_SHOULDER, OATH_TOL); // OATH_L_SHOULDERの目標を使用
+        jointCount++;
+        
+        // R_ELBOW: 直角 (90度)
+        const rightElbowAngle = calculateAngle(currentLandmarks[L.RIGHT_SHOULDER], currentLandmarks[L.RIGHT_ELBOW], currentLandmarks[L.RIGHT_WRIST]);
+        totalScore += calculateScore(rightElbowAngle, T.OATH_L_ELBOW, OATH_TOL); // OATH_L_ELBOWの目標を使用
+        jointCount++;
 
-        // 許容される距離 (腕の長さの約 20% まで) 
-        const maxAllowedDistance = armLength * 0.20; 
+        // --- 3. 右腕の空間的制約評価 (右手首が右腰の近くにあるか) ---
+        
+        // ★ 修正点2: 右手首 (L.RIGHT_WRIST) が右腰 (L.RIGHT_HIP) に近いか評価
+        const wristToHipDist = calculateDistance(currentLandmarks[L.RIGHT_WRIST], currentLandmarks[H_R]).totalDistance;
+        // 腕の長さ (肩から肘) を正規化の基準とする
+        const armLength = calculateDistance(currentLandmarks[L.RIGHT_SHOULDER], currentLandmarks[L.RIGHT_ELBOW]).totalDistance;
+
+        // ★ 修正点3: 許容される距離を腕の長さの 70% へ大幅に緩和
+        const maxAllowedDistance = armLength * 0.70; 
 
         // 距離が近ければ近いほどスコアが高い
         const distanceScore = 100 * (1 - (wristToHipDist / maxAllowedDistance));
@@ -770,7 +777,7 @@ function resetChallenge(nextStage = false) {
             currentChallengeNameElement.textContent = `▶️ ${nextChallenge.name}`;
         }
         
-        // チャレンジ画像が定義されていれば表示
+        // ★ 修正点: オーバーレイ画像の設定を確実に行う
         if (overlayImageElement && nextChallenge.imageSrc) {
             overlayImageElement.src = nextChallenge.imageSrc;
             overlayImageElement.style.display = 'block';
@@ -847,19 +854,25 @@ function showChallengeResults() {
 /**
  * 準備フェーズを開始する
  */
-function startPreparationPhase() {
-    if (isChallengeStarted || isInPreparationPhase) return;
-    isInPreparationPhase = true;
-    isWaitingForStartPose = false; // 待機状態を解除
 
-    const currentChallenge = CURRENT_CHALLENGES[currentChallengeIndex];
-    guideMessageElement.textContent = `✅ ${currentChallenge.message.replace(/【.+】/, '')} ポーズを確認！そのままでお待ちください...`;
+
+function startSnapshotDelay() {
+    if (isSnapshotDelayed) return; // 既に遅延中の場合は何もしない
     
-    setTimeout(() => {
-        isInPreparationPhase = false;
-        startChallengeTimer();
-    }, PREP_DELAY_SECONDS * 1000);
+    isSnapshotDelayed = true;
+    
+    // 既存のタイマーがあればクリア
+    if (snapshotTimerId) {
+        clearTimeout(snapshotTimerId);
+    }
+    
+    // 1秒後にフラグをリセットし、スナップショットの取得を再開する
+    snapshotTimerId = setTimeout(() => {
+        isSnapshotDelayed = false;
+        snapshotTimerId = null;
+    }, 1000); // 1000ミリ秒 = 1秒
 }
+
 
 // チャレンジ強制開始関数
 function forceStartChallenge() {
@@ -1040,90 +1053,103 @@ camera.start().then(() => {
 /**
  * MediaPipeからの姿勢検出結果を受け取るコールバック
  */
+/**
+ * MediaPipeからの姿勢検出結果を受け取るコールバック
+ */
 function onResults(results) {
-    canvasCtx.save();
-    canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-    canvasCtx.globalCompositeOperation = 'source_over';
-    canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+    // ★ 修正点: try-catchブロックで処理を囲み、エラーによるカメラ停止を防ぐ
+    try {
+        canvasCtx.save();
+        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+        canvasCtx.globalCompositeOperation = 'source_over';
+        canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
 
-    if (results.poseLandmarks) {
-        
-        // --- 1. チャレンジ開始トリガー判定 ---
-        if (isWaitingForStartPose && !isChallengeStarted && !isInPreparationPhase) {
-            let isVerticalReady = isVerticalStartPoseAchieved(results.poseLandmarks);
-            let isTPoseReady = isTPoseStartPoseAchieved(results.poseLandmarks);
+        if (results.poseLandmarks) {
+            
+            // --- 1. チャレンジ開始トリガー判定 ---
+            if (isWaitingForStartPose && !isChallengeStarted && !isInPreparationPhase) {
+                let isVerticalReady = isVerticalStartPoseAchieved(results.poseLandmarks);
+                let isTPoseReady = isTPoseStartPoseAchieved(results.poseLandmarks);
 
-            if (isVerticalReady || isTPoseReady) {
-                
-                // チャレンジリストを決定
-                CURRENT_CHALLENGES.length = 0;
-                
-                if (isVerticalReady) {
-                    // 垂直ポーズ: 左手上げのみをチュートリアルとして実行
-                    CURRENT_CHALLENGES.push({ ...VERTICAL_CHALLENGES[0], score: null });
-                    currentStartPoseType = 'VERTICAL';
-                    currentChallengeNameElement.textContent = `▶️ ${VERTICAL_CHALLENGES[0].name} 準備中...`;
+                if (isVerticalReady || isTPoseReady) {
                     
-                } else if (isTPoseReady) {
-                    // T字ポーズ: ランダムにチャレンジを生成
-                    const selected = [...T_POSE_CHALLENGES];
-                    // 実行順をシャッフル
-                    for (let i = selected.length - 1; i > 0; i--) {
-                        const j = Math.floor(Math.random() * (i + 1));
-                        [selected[i], selected[j]] = [selected[j], selected[i]];
+                    // チャレンジリストを決定
+                    CURRENT_CHALLENGES.length = 0;
+                    
+                    if (isVerticalReady) {
+                        // 垂直ポーズ: 左手上げのみをチュートリアルとして実行
+                        CURRENT_CHALLENGES.push({ ...VERTICAL_CHALLENGES[0], score: null });
+                        currentStartPoseType = 'VERTICAL';
+                        currentChallengeNameElement.textContent = `▶️ ${VERTICAL_CHALLENGES[0].name} 準備中...`;
+                        
+                    } else if (isTPoseReady) {
+                        // T字ポーズ: ランダムにチャレンジを生成
+                        const selected = [...T_POSE_CHALLENGES];
+                        // 実行順をシャッフル
+                        for (let i = selected.length - 1; i > 0; i--) {
+                            const j = Math.floor(Math.random() * (i + 1));
+                            [selected[i], selected[j]] = [selected[j], selected[i]];
+                        }
+                        
+                        selected.forEach(c => CURRENT_CHALLENGES.push({ ...c, score: null }));
+                        currentStartPoseType = 'T_POSE';
+                        currentChallengeNameElement.textContent = `▶️ 連続チャレンジ 準備中...`;
                     }
                     
-                    selected.forEach(c => CURRENT_CHALLENGES.push({ ...c, score: null }));
-                    currentStartPoseType = 'T_POSE';
-                    currentChallengeNameElement.textContent = `▶️ 連続チャレンジ 準備中...`;
+                    // チャレンジリストが確定したら、準備フェーズを開始
+                    if (CURRENT_CHALLENGES.length > 0) {
+                        currentChallengeIndex = 0;
+                        // resetChallenge(false) を呼び出し、画像を設定してから準備を開始させる
+                        resetChallenge(false); 
+                    }
                 }
-                
-                // チャレンジリストが確定したら、準備フェーズを開始
-                if (CURRENT_CHALLENGES.length > 0) {
-                    currentChallengeIndex = 0;
-                    startPreparationPhase();
-                }
+            }
+            
+            // リアルタイムポーズスナップショットを更新
+            if (isChallengeStarted && !isPoseFixed) {
+                // ★ 修正点: 遅延チェックを削除し、常にスナップショットを更新するように戻す
+                currentLandmarksSnapshot = JSON.parse(JSON.stringify(results.poseLandmarks));
+                // startSnapshotDelay() の呼び出しを削除
+            }
+
+
+            // --- 2. 描画とスコア表示の更新 ---
+            // 描画にはリアルタイムのポーズか確定済みのポーズを使用
+            const drawingLandmarksToUse = finalPoseLandmarks || results.poseLandmarks;
+
+            const lineColor = isPoseFixed ? '#FFD700' : '#00FF00'; 
+            const dotColor = isPoseFixed ? '#FFA500' : '#FF0000'; 
+            
+            drawConnectors(canvasCtx, drawingLandmarksToUse, window.POSE_CONNECTIONS,
+                           { color: lineColor, lineWidth: 4 }); 
+            drawLandmarks(canvasCtx, drawingLandmarksToUse,
+                          { color: dotColor, lineWidth: 2, radius: 4 });
+
+            // スコア更新ロジック: チャレンジ中かつスコアが確定していない場合
+            // スコア計算は、遅延フラグに関わらず、最後に取得されたスナップショットに基づいて実行される
+            if (!isPoseFixed && isChallengeStarted && currentLandmarksSnapshot) { 
+                 const score = calculateMatchScore(currentLandmarksSnapshot);
+                 matchScoreElement.textContent = score.toFixed(1) + ' %';
+                 
+                 if (score > 80) {
+                    matchScoreElement.style.color = '#4CAF50';
+                 } else if (score > 50) {
+                    matchScoreElement.style.color = '#FFA500';
+                 } else {
+                    matchScoreElement.style.color = '#F44336';
+                 }
+            } else if (!isChallengeStarted && !isWaitingForStartPose) {
+                 // チャレンジが終了して待機状態に戻るまでの描画ロジック (finalPoseLandmarksがセットされているはず)
+                 if (finalPoseLandmarks) {
+                     drawConnectors(canvasCtx, finalPoseLandmarks, window.POSE_CONNECTIONS, { color: '#FFD700', lineWidth: 4 });
+                     drawLandmarks(canvasCtx, finalPoseLandmarks, { color: '#FFA500', lineWidth: 2, radius: 4 });
+                 }
             }
         }
         
-        // リアルタイムポーズスナップショットを更新
-        if (isChallengeStarted && !isPoseFixed) {
-            // スコア計算のために、検出されたポーズをスナップショットに保存
-            currentLandmarksSnapshot = JSON.parse(JSON.stringify(results.poseLandmarks));
-        }
-
-
-        // --- 2. 描画とスコア表示の更新 ---
-        const drawingLandmarksToUse = finalPoseLandmarks || results.poseLandmarks;
-
-        const lineColor = isPoseFixed ? '#FFD700' : '#00FF00'; 
-        const dotColor = isPoseFixed ? '#FFA500' : '#FF0000'; 
-        
-        drawConnectors(canvasCtx, drawingLandmarksToUse, window.POSE_CONNECTIONS,
-                       { color: lineColor, lineWidth: 4 }); 
-        drawLandmarks(canvasCtx, drawingLandmarksToUse,
-                      { color: dotColor, lineWidth: 2, radius: 4 });
-
-        // スコア更新ロジック: チャレンジ中かつスコアが確定していない場合
-        if (!isPoseFixed && isChallengeStarted && currentLandmarksSnapshot) { 
-             const score = calculateMatchScore(currentLandmarksSnapshot);
-             matchScoreElement.textContent = score.toFixed(1) + ' %';
-             
-             if (score > 80) {
-                matchScoreElement.style.color = '#4CAF50';
-             } else if (score > 50) {
-                matchScoreElement.style.color = '#FFA500';
-             } else {
-                matchScoreElement.style.color = '#F44336';
-             }
-        } else if (!isChallengeStarted && !isWaitingForStartPose) {
-             // チャレンジが終了して待機状態に戻るまでの描画ロジック (finalPoseLandmarksがセットされているはず)
-             if (finalPoseLandmarks) {
-                 drawConnectors(canvasCtx, finalPoseLandmarks, window.POSE_CONNECTIONS, { color: '#FFD700', lineWidth: 4 });
-                 drawLandmarks(canvasCtx, finalPoseLandmarks, { color: '#FFA500', lineWidth: 2, radius: 4 });
-             }
-        }
+        canvasCtx.restore();
+    } catch (e) {
+        // エラーが発生した場合、コンソールに出力するだけで、処理を止めない
+        console.error("Error inside onResults (MediaPipe processing or drawing):", e);
     }
-    
-    canvasCtx.restore();
 }
