@@ -414,8 +414,8 @@ function calculateMatchScore(currentLandmarks) {
             currentLandmarks[L_E].visibility > GRIP_VISIBILITY_THRESHOLD &&
             currentLandmarks[L_W].visibility > GRIP_VISIBILITY_THRESHOLD) {
             
-            const leftShoulderAngle = calculateAngle(currentLandmarks[L_H], currentLandmarks[L_S], currentLandmarks[L_E]);
-            const leftElbowAngle = calculateAngle(currentLandmarks[L_S], currentLandmarks[L_E], currentLandmarks[L_W]);
+            const leftShoulderAngle = calculateAngle(currentLandmarks[L.LEFT_HIP], currentLandmarks[L.LEFT_SHOULDER], currentLandmarks[L.LEFT_ELBOW]);
+            const leftElbowAngle = calculateAngle(currentLandmarks[L.LEFT_SHOULDER], currentLandmarks[L.LEFT_ELBOW], currentLandmarks[L.LEFT_WRIST]);
             
             totalScore += calculateScore(leftShoulderAngle, T.SIDE_BEND_SHOULDER, BEND_TOL);
             totalScore += calculateScore(leftElbowAngle, T.SIDE_BEND_L_ELBOW, BEND_TOL);
@@ -462,7 +462,7 @@ function calculateMatchScore(currentLandmarks) {
         jointCount += 2;
     }
 
-    // ★ 9. ASYM_SALUTE_ARMS (敬礼ポーズ) の評価ロジック
+    // 9. ASYM_SALUTE_ARMS (敬礼ポーズ) の評価ロジック
     else if (challenge.targetType === 'ASYM_SALUTE_ARMS') {
         const T = target;
         const SALUTE_TOL = tolerance.SALUTE_TOLERANCE; // 30 を使用
@@ -499,7 +499,7 @@ function calculateMatchScore(currentLandmarks) {
         jointCount += 2;
     }
     
-    // ★ 10. SURPRISE_ARMS (びっくりした人ポーズ) の評価ロジック
+    // 10. SURPRISE_ARMS (びっくりした人ポーズ) の評価ロジック
     else if (challenge.targetType === 'SURPRISE_ARMS') {
         const sides = ['LEFT', 'RIGHT'];
         const T = target;
@@ -532,7 +532,7 @@ function calculateMatchScore(currentLandmarks) {
         }
     }
     
-    // ★ 11. ASYM_OATH_ARMS (忠誠を誓う人ポーズ) の評価ロジック
+    // 11. ASYM_OATH_ARMS (忠誠を誓う人ポーズ) の評価ロジック
     else if (challenge.targetType === 'ASYM_OATH_ARMS') {
         const T = target;
         const OATH_TOL = tolerance.OATH_TOLERANCE; // 40度を使用
@@ -575,7 +575,7 @@ function calculateMatchScore(currentLandmarks) {
         jointCount++; // 2ではなく1を加算。合計4つの関節評価
     }
     
-    // ★ 12. FUSION_ARMS (フュージョンポーズ) の評価ロジック (追加)
+    // 12. FUSION_ARMS (フュージョンポーズ) の評価ロジック (追加)
     else if (challenge.targetType === 'FUSION_ARMS') {
         const sides = ['LEFT', 'RIGHT'];
         const T = target;
@@ -608,6 +608,7 @@ function calculateMatchScore(currentLandmarks) {
         }
     }
     
+    // 13. ASYM_ARMS_UP_DOWN (非対称の片腕上げポーズ) の評価ロジック
     else if (challenge.targetType === 'ASYM_ARMS_UP_DOWN') {
         const T = target;
         const UP_DOWN_TOL = tolerance.ASYM_UP_DOWN_TOLERANCE;
@@ -646,6 +647,66 @@ function calculateMatchScore(currentLandmarks) {
         totalScore += calculateScore(rightShoulderAngle, T.UP_DOWN_R_SHOULDER, UP_DOWN_TOL);
         totalScore += calculateScore(rightElbowAngle, T.UP_DOWN_R_ELBOW, UP_DOWN_TOL);
         jointCount += 2;
+    }
+    
+    // ★ 追加: 14. JIMAN_ARMS (自慢する人ポーズ) の評価ロジック
+    else if (challenge.targetType === 'JIMAN_ARMS') {
+        const sides = ['LEFT', 'RIGHT'];
+        const T = target;
+        const JIMAN_TOL = tolerance.JIMAN_TOLERANCE; 
+        const JIMAN_HIP_TOL = tolerance.JIMAN_HIP_TOLERANCE;
+        const JIMAN_TILT_TOL = tolerance.JIMAN_TILT_TOLERANCE;
+        const VISIBILITY = VISIBILITY_THRESHOLD; 
+        
+        let allArmsVisible = true;
+        for (const side of sides) {
+            const S = L[`${side}_SHOULDER`];
+            const E = L[`${side}_ELBOW`];
+            const H = L[`${side}_HIP`];
+            const W = L[`${side}_WRIST`]; 
+            const K = L[`${side}_KNEE`]; // 股関節の評価に必要
+
+            // 必須ランドマークの可視性チェック
+            if (!currentLandmarks[S] || !currentLandmarks[E] || !currentLandmarks[H] || !currentLandmarks[W] || !currentLandmarks[K] ||
+                currentLandmarks[S].visibility < VISIBILITY ||
+                currentLandmarks[E].visibility < VISIBILITY ||
+                currentLandmarks[W].visibility < VISIBILITY ||
+                currentLandmarks[K].visibility < VISIBILITY) { 
+                allArmsVisible = false;
+                break;
+            }
+            
+            // 腕の判定: 肩と肘
+            // 肩の角度 (腰-肩-肘): 水平より少し下 (T.JIMAN_SHOULDER = 120度)
+            const currentShoulderAngle = calculateAngle(currentLandmarks[H], currentLandmarks[S], currentLandmarks[E]);
+            totalScore += calculateScore(currentShoulderAngle, T.JIMAN_SHOULDER, JIMAN_TOL);
+            jointCount++;
+
+            // 肘の角度 (肩-肘-手首): 直角 (T.JIMAN_ELBOW = 90度)
+            const currentElbowAngle = calculateAngle(currentLandmarks[S], currentLandmarks[E], currentLandmarks[W]);
+            totalScore += calculateScore(currentElbowAngle, T.JIMAN_ELBOW, JIMAN_TOL);
+            jointCount++;
+            
+            // 股関節の角度 (肩-腰-膝): 体幹を真っ直ぐに維持 (T.JIMAN_HIP = 175度)
+            const currentHipAngle = calculateAngle(currentLandmarks[S], currentLandmarks[H], currentLandmarks[K]);
+            totalScore += calculateScore(currentHipAngle, T.JIMAN_HIP, JIMAN_HIP_TOL);
+            jointCount++;
+        }
+        
+        if (!allArmsVisible) {
+            return 0; 
+        }
+
+        // 体幹の傾き判定
+        // 左肩-左腰間の垂直からの傾き
+        const leftTilt = calculateVerticalTiltAngle(currentLandmarks[L.LEFT_HIP], currentLandmarks[L.LEFT_SHOULDER]);
+        // 右肩-右腰間の垂直からの傾き
+        const rightTilt = calculateVerticalTiltAngle(currentLandmarks[L.RIGHT_HIP], currentLandmarks[L.RIGHT_SHOULDER]);
+        
+        // 左右の傾きの平均値を評価
+        const averageTilt = (leftTilt + rightTilt) / 2;
+        totalScore += calculateScore(averageTilt, 0, JIMAN_TILT_TOL); // 目標角度0度（垂直）
+        jointCount++; // 傾きを1つの評価項目として追加
     }
 
     // jointCountが0の場合にNaNを返すのを防ぐ
