@@ -817,7 +817,7 @@ function showChallengeResults() {
     
     if (isTPoseGroup) {
         // T字ポーズグループの平均スコア表示
-        if (averageScore > 85) {
+        if (averageScore > 70) {
             matchScoreElement.style.color = '#4CAF50';
             messageHTML = `🎉 **連続チャレンジ完了！** 平均スコア: ${averageScore.toFixed(1)}%<br>素晴らしいパーフェクト達成です！`;
         } else {
@@ -1128,7 +1128,7 @@ function onResults(results) {
              const score = calculateMatchScore(currentLandmarksSnapshot);
              matchScoreElement.textContent = score.toFixed(1) + ' %';
              
-             if (score > 70) {
+             if (score >= 70) {
                 matchScoreElement.style.color = '#4CAF50';
              } else if (score > 50) {
                 matchScoreElement.style.color = '#FFA500';
