@@ -62,7 +62,7 @@ export const T_POSE_CHALLENGES = [
     // 剣の握りポーズ
     {
         id: 'SWORD_GRIP_POSE',
-        name: "頭上でビームポーズ",
+        name: "スローインポーズ",
         message: "【T字スタート】両腕を水平よりやや下に下げ、肘を曲げてビームポーズを維持してください。",
         targetType: 'SWORD_GRIP', // 新しい評価タイプ
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], // 両肩と両肘
@@ -72,7 +72,7 @@ export const T_POSE_CHALLENGES = [
     // 頭上での屈曲ポーズ
     {
         id: 'HIGH_SIDE_BEND_POSE',
-        name: "大剣ポーズ",
+        name: "大剣を振りかざすポーズ",
         message: "【T字スタート】両腕を頭上に上げて肘を曲げ、体幹を大きく傾けて剣を握るようにしてください。",
         targetType: 'SIDE_BEND_ARMS', // 新しい評価タイプ
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
@@ -82,7 +82,7 @@ export const T_POSE_CHALLENGES = [
     // ARCHERY_POSE
     {
         id: 'ARCHERY_POSE',
-        name: "非対称の弓引きポーズ",
+        name: "弓引きポーズ",
         message: "【T字スタート】右肘を曲げて頭の後ろに、左腕を水平に伸ばしてポーズを維持してください。",
         targetType: 'ASYM_ARCHERY_ARMS', // 新しい評価タイプ
         evalJoints: ['L_SHOULULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
@@ -102,7 +102,7 @@ export const T_POSE_CHALLENGES = [
     // びっくりした人ポーズ
     {
         id: 'SURPRISE_POSE',
-        name: "びっくりした人ポーズ",
+        name: "びっくりした人(コロンビア)ポーズ",
         message: "【T字スタート】両腕を水平より少し上に上げ、肘を曲げて手のひらを頭の横に近づけるポーズを維持してください。",
         targetType: 'SURPRISE_ARMS', // 新しい評価タイプ
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
@@ -132,7 +132,7 @@ export const T_POSE_CHALLENGES = [
 
     {
         id: 'LEFT_ARM_UP_RIGHT_ARM_DOWN',
-        name: "非対称の片腕上げポーズ",
+        name: "腕上げポーズ",
         message: "【T字スタート】両手を上げて腰を曲げてみてください。",
         targetType: 'ASYM_ARMS_UP_DOWN', // 新しい評価タイプ
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
