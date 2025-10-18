@@ -33,7 +33,7 @@ export const VERTICAL_CHALLENGES = [
         targetType: 'ARM', 
         evalJoints: ['L_SHOULDER', 'L_ELBOW'],
         requiredStartPose: 'VERTICAL', 
-        imageSrc: './images/LhandUP_pose_overlay.png', 
+        imageSrc: './images/posePikt/挙手.png', 
     },
 ];
 
@@ -87,7 +87,7 @@ export const T_POSE_CHALLENGES = [
         targetType: 'ASYM_ARCHERY_ARMS', // 新しい評価タイプ
         evalJoints: ['L_SHOULULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
         requiredStartPose: 'T_POSE', 
-        imageSrc: './images/posePikt/弓引き.png', // 新しい画像 (仮)
+        imageSrc: './images/posePikt/弓引き改.png', // 新しい画像 (仮)
     },
     // 敬礼ポーズ
     {
@@ -133,7 +133,7 @@ export const T_POSE_CHALLENGES = [
     {
         id: 'LEFT_ARM_UP_RIGHT_ARM_DOWN',
         name: "非対称の片腕上げポーズ",
-        message: "【T字スタート】左腕を垂直に上げ、右腕を斜め下に伸ばしてポーズを維持してください。",
+        message: "【T字スタート】両手を上げて腰を曲げてみてください。",
         targetType: 'ASYM_ARMS_UP_DOWN', // 新しい評価タイプ
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
         requiredStartPose: 'T_POSE', 
@@ -149,7 +149,7 @@ export const T_POSE_CHALLENGES = [
         // 評価対象に股関節（L_HIP, R_HIP）を追加
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'L_HIP', 'R_SHOULDER', 'R_ELBOW', 'R_HIP'], 
         requiredStartPose: 'T_POSE', 
-        imageSrc: './images/posePikt/自慢.png', // 新しい画像
+        imageSrc: './images/posePikt/自慢改.png', // 新しい画像
     },
 ];
 
