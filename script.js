@@ -965,10 +965,10 @@ function startChallengeTimer() {
                 isPoseFixed = true; 
                 finalPoseLandmarks = currentLandmarksSnapshot; 
                 
-                if (score > 90) {
+                if (score > 70) {
                     matchScoreElement.style.color = '#4CAF50'; 
                     guideMessageElement.textContent = `🌟 ${CURRENT_CHALLENGES[currentChallengeIndex].name} 完了！パーフェクト達成です！`;
-                } else if (score > 70) {
+                } else if (score > 50) {
                     matchScoreElement.style.color = '#FFC107';
                     guideMessageElement.textContent = `${CURRENT_CHALLENGES[currentChallengeIndex].name} 完了！もう少しで目標達成でした！`;
                 } else {
@@ -1128,7 +1128,7 @@ function onResults(results) {
              const score = calculateMatchScore(currentLandmarksSnapshot);
              matchScoreElement.textContent = score.toFixed(1) + ' %';
              
-             if (score > 80) {
+             if (score > 70) {
                 matchScoreElement.style.color = '#4CAF50';
              } else if (score > 50) {
                 matchScoreElement.style.color = '#FFA500';
