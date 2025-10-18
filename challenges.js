@@ -102,7 +102,7 @@ export const T_POSE_CHALLENGES = [
     // びっくりした人ポーズ
     {
         id: 'SURPRISE_POSE',
-        name: "びっくりした人(コロンビア)ポーズ",
+        name: "びっくりした人ポーズ",
         message: "【T字スタート】両腕を水平より少し上に上げ、肘を曲げて手のひらを頭の横に近づけるポーズを維持してください。",
         targetType: 'SURPRISE_ARMS', // 新しい評価タイプ
         evalJoints: ['L_SHOULDER', 'L_ELBOW', 'R_SHOULDER', 'R_ELBOW'], 
@@ -143,7 +143,7 @@ export const T_POSE_CHALLENGES = [
     // ★ 追加: 自慢する人ポーズ
     {
         id: 'JIMAN_POSE',
-        name: "自慢する人ポーズ",
+        name: "自慢する人(コロンビア)ポーズ",
         message: "【T字スタート】両手を腰に当て、胸を張ってポーズを維持してください。",
         targetType: 'JIMAN_ARMS', // 新しい評価タイプ
         // 評価対象に股関節（L_HIP, R_HIP）を追加
